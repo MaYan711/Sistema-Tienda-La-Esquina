@@ -1,0 +1,38 @@
+<section class="auth-page auth-page--compact">
+  <a class="back-link" routerLink="/auth/login"
+    ><i class="pi pi-arrow-left"></i>{{ 'common.back' | transloco }}</a
+  >
+  <span class="auth-page__kicker">{{ 'auth.verify.kicker' | transloco }}</span>
+  <h1>{{ 'auth.verify.title' | transloco }}</h1>
+  <p class="auth-page__intro">{{ 'auth.verify.description' | transloco }}</p>
+
+  <app-form-feedback [message]="serverMessage()" />
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-field">
+      <label for="login-otp">{{ 'auth.fields.otp' | transloco }}</label>
+      <input
+        id="login-otp"
+        pInputText
+        type="text"
+        inputmode="numeric"
+        maxlength="6"
+        autocomplete="one-time-code"
+        formControlName="otp"
+        [placeholder]="'auth.fields.otpPlaceholder' | transloco"
+      />
+      <app-field-error [control]="form.controls.otp" [submitted]="submitted()" kind="otp" />
+    </div>
+
+    <button class="primary-button" type="submit" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <i class="pi pi-spin pi-spinner"></i>
+      }
+      <span>{{ 'auth.verify.submit' | transloco }}</span>
+    </button>
+  </form>
+
+  <p class="auth-page__footnote">
+    <i class="pi pi-clock"></i>{{ 'auth.verify.expiry' | transloco }}
+  </p>
+</section>

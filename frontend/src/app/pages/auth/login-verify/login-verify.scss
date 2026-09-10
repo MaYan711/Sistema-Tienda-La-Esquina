@@ -1,0 +1,16 @@
+.auth-page--compact .back-link {
+  margin-bottom: 2.5rem;
+}
+
+.back-link {
+  align-items: center;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 0.78rem;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--ink);
+}
