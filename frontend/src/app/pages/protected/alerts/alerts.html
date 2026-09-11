@@ -1,0 +1,39 @@
+<app-page-heading eyebrowKey="alerts.eyebrow" titleKey="alerts.title" descriptionKey="alerts.description" />
+<app-form-feedback [message]="errorMessage()" />
+<app-form-feedback [message]="successMessage()" tone="success" />
+
+<form class="alerts-filters" [formGroup]="filters" (ngSubmit)="applyFilters()">
+  <label><span>Tipo</span><select formControlName="type"><option value="">Todos</option><option value="LOW_STOCK">Existencia baja</option><option value="OUT_OF_STOCK">Agotado</option></select></label>
+  <label><span>Estado</span><select formControlName="readState"><option value="unread">Pendientes</option><option value="read">Leídas</option><option value="all">Todas</option></select></label>
+  <button class="primary-button primary-button--inline" type="submit">Aplicar filtros</button>
+</form>
+
+<section class="alerts-list">
+  @if (loading()) {
+    <div class="alerts-empty"><i class="pi pi-spin pi-spinner"></i> Cargando alertas...</div>
+  } @else if (notifications().length === 0) {
+    <div class="alerts-empty"><i class="pi pi-check-circle"></i><strong>Sin alertas para mostrar</strong><span>No hay notificaciones que coincidan con los filtros actuales.</span></div>
+  } @else {
+    @for (notification of notifications(); track notification.id) {
+      <article class="alert-card" [class.alert-card--critical]="notification.type === 'OUT_OF_STOCK'" [class.alert-card--read]="notification.read">
+        <span class="alert-icon"><i [class]="notification.type === 'OUT_OF_STOCK' ? 'pi pi-times-circle' : 'pi pi-exclamation-triangle'"></i></span>
+        <div class="alert-content">
+          <div class="alert-title-row"><div><span>{{ notification.type === 'OUT_OF_STOCK' ? 'Producto agotado' : 'Existencia baja' }}</span><h3>{{ notification.productName }}</h3></div><span class="alert-state">{{ notification.read ? 'Leída' : 'Pendiente' }}</span></div>
+          <p>{{ notification.message }}</p>
+          <div class="alert-meta"><span>Stock: <strong>{{ notification.currentStock | number:'1.0-3' }}</strong></span><span>Mínimo: <strong>{{ notification.minimumStock | number:'1.0-3' }}</strong></span><span>Código: {{ notification.productCode }}</span></div>
+          @if (notification.read) {
+            <small>Leída por {{ notification.readByEmail }} · {{ formatGuatemalaDate(notification.readAt) }}</small>
+          }
+        </div>
+        @if (!notification.read) {
+          <button class="secondary-button secondary-button--light" type="button" (click)="markAsRead(notification)"><i class="pi pi-check"></i> Marcar como leída</button>
+        }
+      </article>
+    }
+  }
+</section>
+
+<footer class="alerts-pagination">
+  <span>{{ totalElements() }} notificaciones</span>
+  <div><button type="button" [disabled]="page() === 0" (click)="previousPage()"><i class="pi pi-chevron-left"></i></button><span>Página {{ page() + 1 }} de {{ totalPages() || 1 }}</span><button type="button" [disabled]="page() + 1 >= totalPages()" (click)="nextPage()"><i class="pi pi-chevron-right"></i></button></div>
+</footer>

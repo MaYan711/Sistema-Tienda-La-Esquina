@@ -1,0 +1,142 @@
+<div class="page-toolbar">
+  <app-page-heading eyebrowKey="products.eyebrow" titleKey="products.title" descriptionKey="products.description" />
+  @if (isAdmin()) {
+    <button class="primary-button primary-button--inline" type="button" (click)="openCreate()">
+      <i class="pi pi-plus"></i><span>{{ 'products.new' | transloco }}</span>
+    </button>
+  }
+</div>
+
+<app-form-feedback [message]="errorMessage()" />
+<app-form-feedback [message]="successMessage()" tone="success" />
+
+<form class="filters-panel" [formGroup]="filters" (ngSubmit)="applyFilters()">
+  <label>
+    <span>{{ 'products.filters.search' | transloco }}</span>
+    <input type="search" formControlName="search" placeholder="Código o nombre" />
+  </label>
+  <label>
+    <span>{{ 'products.filters.category' | transloco }}</span>
+    <select formControlName="categoryId">
+      <option value="">Todas</option>
+      @for (category of categories(); track category.id) {
+        <option [value]="category.id">{{ category.name }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    <span>{{ 'products.filters.status' | transloco }}</span>
+    <select formControlName="stockStatus">
+      <option value="">Todos</option>
+      <option value="AVAILABLE">Disponible</option>
+      <option value="LOW_STOCK">Bajo</option>
+      <option value="OUT_OF_STOCK">Agotado</option>
+    </select>
+  </label>
+  <div class="filter-actions">
+    <button class="secondary-button secondary-button--compact" type="button" (click)="clearFilters()">Limpiar</button>
+  </div>
+</form>
+
+<section class="data-panel">
+  @if (loading()) {
+    <div class="table-state"><i class="pi pi-spin pi-spinner"></i> Cargando productos...</div>
+  } @else if (products().length === 0) {
+    <div class="table-state">No se encontraron productos con estos filtros.</div>
+  } @else {
+    <div class="table-scroll">
+      <table class="store-table">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Código</th>
+            <th>Categoría</th>
+            <th>Stock</th>
+            <th>Compra</th>
+            <th>Venta</th>
+            <th>Estado</th>
+            @if (isAdmin()) { <th class="actions-column">Acciones</th> }
+          </tr>
+        </thead>
+        <tbody>
+          @for (product of products(); track product.id) {
+            <tr>
+              <td>
+                <div class="product-cell">
+                  <div class="product-thumb">
+                    @if (product.imageUrl) {
+                      <img [src]="product.imageUrl" [alt]="product.name" />
+                    } @else {
+                      <i class="pi pi-box"></i>
+                    }
+                  </div>
+                  <div><strong>{{ product.name }}</strong><small>{{ product.unit.name }}</small></div>
+                </div>
+              </td>
+              <td><code>{{ product.code }}</code></td>
+              <td>{{ product.category.name }}</td>
+              <td><strong>{{ product.currentStock | number:'1.0-3' }}</strong></td>
+              <td>Q {{ product.purchasePrice | number:'1.2-2' }}</td>
+              <td>Q {{ product.salePrice | number:'1.2-2' }}</td>
+              <td><span class="status-pill" [class]="'status-pill status-' + product.stockStatus.toLowerCase()">{{ statusLabel(product.stockStatus) }}</span></td>
+              @if (isAdmin()) {
+                <td>
+                  <div class="row-actions">
+                    <button type="button" title="Ajustar stock" (click)="openAdjustment(product)"><i class="pi pi-box"></i></button>
+                    <button type="button" title="Editar" (click)="openEdit(product)"><i class="pi pi-pencil"></i></button>
+                    <button type="button" [title]="product.active ? 'Desactivar' : 'Activar'" (click)="toggleActive(product)"><i [class]="product.active ? 'pi pi-ban' : 'pi pi-check-circle'"></i></button>
+                  </div>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <footer class="table-footer">
+      <span>Mostrando {{ pageStart() }}-{{ pageEnd() }} de {{ totalElements() }} productos</span>
+      <div class="pagination-actions">
+        <button type="button" [disabled]="page() === 0" (click)="previousPage()"><i class="pi pi-chevron-left"></i></button>
+        <span>Página {{ page() + 1 }} de {{ totalPages() || 1 }}</span>
+        <button type="button" [disabled]="page() + 1 >= totalPages()" (click)="nextPage()"><i class="pi pi-chevron-right"></i></button>
+      </div>
+    </footer>
+  }
+</section>
+
+@if (productModalOpen()) {
+  <div class="modal-backdrop" (click)="closeProductModal()"></div>
+  <section class="store-modal store-modal--wide" role="dialog" aria-modal="true">
+    <header><div><span>Catálogo</span><h2>{{ selectedProduct() ? 'Editar producto' : 'Nuevo producto' }}</h2></div><button type="button" (click)="closeProductModal()"><i class="pi pi-times"></i></button></header>
+    <form class="modal-form" [formGroup]="productForm" (ngSubmit)="saveProduct()">
+      <div class="form-grid">
+        <label><span>Código</span><input formControlName="code" /></label>
+        <label><span>Nombre</span><input formControlName="name" /></label>
+        <label><span>Categoría</span><select formControlName="categoryId">@for (category of categories(); track category.id) {<option [value]="category.id">{{ category.name }}</option>}</select></label>
+        <label><span>Unidad</span><select formControlName="unitId">@for (unit of units(); track unit.id) {<option [value]="unit.id">{{ unit.name }}</option>}</select></label>
+        <label><span>Precio compra</span><input type="number" min="0" step="0.01" formControlName="purchasePrice" /></label>
+        <label><span>Precio venta</span><input type="number" min="0" step="0.01" formControlName="salePrice" /></label>
+        @if (!selectedProduct()) {<label><span>Stock inicial</span><input type="number" min="0" step="0.001" formControlName="initialStock" /></label>}
+        <label><span>Stock mínimo</span><input type="number" min="0" step="0.001" formControlName="minimumStock" /></label>
+        <label class="full-field"><span>URL de imagen</span><input formControlName="imageUrl" /></label>
+        <label class="full-field"><span>Descripción</span><textarea rows="3" formControlName="description"></textarea></label>
+      </div>
+      <footer><button class="secondary-button secondary-button--compact" type="button" (click)="closeProductModal()">Cancelar</button><button class="primary-button primary-button--compact" type="submit" [disabled]="saving()">{{ saving() ? 'Guardando...' : 'Guardar producto' }}</button></footer>
+    </form>
+  </section>
+}
+
+@if (adjustmentModalOpen(); as open) {
+  @if (selectedProduct(); as product) {
+    <div class="modal-backdrop" (click)="closeAdjustmentModal()"></div>
+    <section class="store-modal" role="dialog" aria-modal="true">
+      <header><div><span>Inventario</span><h2>Ajustar stock</h2></div><button type="button" (click)="closeAdjustmentModal()"><i class="pi pi-times"></i></button></header>
+      <div class="adjustment-summary"><strong>{{ product.name }}</strong><span>Stock actual: {{ product.currentStock | number:'1.0-3' }}</span><span>Mínimo: {{ product.minimumStock | number:'1.0-3' }}</span></div>
+      <form class="modal-form" [formGroup]="adjustmentForm" (ngSubmit)="saveAdjustment()">
+        <label><span>Nuevo stock</span><input type="number" min="0" step="0.001" formControlName="newStock" /></label>
+        <label><span>Motivo</span><textarea rows="4" formControlName="reason" placeholder="Ej. Conteo físico de inventario"></textarea></label>
+        <footer><button class="secondary-button secondary-button--compact" type="button" (click)="closeAdjustmentModal()">Cancelar</button><button class="primary-button primary-button--compact" type="submit" [disabled]="saving()">Guardar ajuste</button></footer>
+      </form>
+    </section>
+  }
+}
