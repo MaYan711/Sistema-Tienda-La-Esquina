@@ -66,6 +66,31 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'products',
+        loadComponent: () =>
+          import('./pages/protected/products/products').then(
+            (module) => module.ProductsPageComponent,
+          ),
+      },
+      {
+        path: 'inventory/movements',
+        loadComponent: () =>
+          import('./pages/protected/inventory-movements/inventory-movements').then(
+            (module) => module.InventoryMovementsPageComponent,
+          ),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+      },
+      {
+        path: 'alerts',
+        loadComponent: () =>
+          import('./pages/protected/alerts/alerts').then(
+            (module) => module.AlertsPageComponent,
+          ),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+      },
+      {
         path: 'admin',
         loadComponent: () =>
           import('./pages/protected/admin/admin').then((module) => module.AdminPageComponent),

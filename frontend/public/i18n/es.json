@@ -24,7 +24,10 @@
     "admin": "Administración",
     "logout": "Cerrar sesión",
     "secureSession": "Sesión protegida",
-    "main": "Navegación principal"
+    "main": "Navegación principal",
+    "products": "Productos",
+    "alerts": "Alertas",
+    "movements": "Movimientos"
   },
   "roles": {
     "ADMIN": "Administrador",
@@ -136,5 +139,26 @@
     "title": "Este espacio no es para tu rol.",
     "description": "Tu sesión es válida, pero no tienes permisos suficientes para abrir esta ruta.",
     "action": "Volver al resumen"
+  },
+  "products": {
+    "eyebrow": "Catálogo e inventario",
+    "title": "Productos e inventario",
+    "description": "Administra el catálogo, precios, existencias y estado de los productos.",
+    "new": "Nuevo producto",
+    "filters": {
+      "search": "Buscar",
+      "category": "Categoría",
+      "status": "Estado"
+    }
+  },
+  "alerts": {
+    "eyebrow": "Control de inventario",
+    "title": "Alertas de inventario",
+    "description": "Revisa productos con existencias bajas o agotadas y marca las alertas atendidas."
+  },
+  "movements": {
+    "eyebrow": "Trazabilidad",
+    "title": "Movimientos de inventario",
+    "description": "Consulta el historial de entradas, ventas y ajustes que modificaron las existencias."
   }
 }
