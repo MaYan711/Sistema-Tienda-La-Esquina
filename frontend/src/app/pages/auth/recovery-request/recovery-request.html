@@ -1,0 +1,40 @@
+<section class="auth-page auth-page--compact">
+  <a class="back-link" routerLink="/auth/login"
+    ><i class="pi pi-arrow-left"></i>{{ 'common.back' | transloco }}</a
+  >
+  <span class="auth-page__kicker">{{ 'auth.recovery.kicker' | transloco }}</span>
+  <h1>{{ 'auth.recovery.title' | transloco }}</h1>
+  <p class="auth-page__intro">{{ 'auth.recovery.description' | transloco }}</p>
+
+  <app-form-feedback [message]="errorMessage()" />
+  <app-form-feedback [message]="successMessage()" tone="success" />
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-field">
+      <label for="recovery-email">{{ 'auth.fields.email' | transloco }}</label>
+      <input
+        id="recovery-email"
+        pInputText
+        type="email"
+        formControlName="email"
+        autocomplete="email"
+        [placeholder]="'auth.fields.emailPlaceholder' | transloco"
+      />
+      <app-field-error [control]="form.controls.email" [submitted]="submitted()" />
+    </div>
+
+    <button class="primary-button" type="submit" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <i class="pi pi-spin pi-spinner"></i>
+      }
+      <span>{{ 'auth.recovery.submit' | transloco }}</span>
+      @if (!isSubmitting()) {
+        <i class="pi pi-arrow-up-right"></i>
+      }
+    </button>
+  </form>
+
+  <p class="auth-page__footnote">
+    <i class="pi pi-envelope"></i>{{ 'auth.recovery.note' | transloco }}
+  </p>
+</section>

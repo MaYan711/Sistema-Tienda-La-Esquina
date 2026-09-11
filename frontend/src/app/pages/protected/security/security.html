@@ -1,0 +1,197 @@
+<app-page-heading
+  eyebrowKey="security.eyebrow"
+  titleKey="security.title"
+  descriptionKey="security.description"
+/>
+
+<div class="settings-grid">
+  <section class="settings-card">
+    <div class="settings-card__heading">
+      <span class="settings-card__icon"><i class="pi pi-key"></i></span>
+      <div>
+        <span class="settings-card__eyebrow">{{ 'security.password.eyebrow' | transloco }}</span>
+        <h2>{{ 'security.password.title' | transloco }}</h2>
+      </div>
+    </div>
+    <p class="settings-card__description">{{ 'security.password.description' | transloco }}</p>
+
+    <app-form-feedback [message]="passwordError()" />
+    <app-form-feedback [message]="passwordSuccess()" tone="success" />
+
+    <form
+      class="auth-form"
+      [formGroup]="passwordForm"
+      (ngSubmit)="submitPasswordChange()"
+      novalidate
+    >
+      <div class="form-field">
+        <label for="current-password">{{ 'security.password.current' | transloco }}</label>
+        <input
+          id="current-password"
+          pInputText
+          type="password"
+          formControlName="currentPassword"
+          autocomplete="current-password"
+        />
+        <app-field-error
+          [control]="passwordForm.controls.currentPassword"
+          [submitted]="passwordSubmitted()"
+        />
+      </div>
+      <div class="form-field">
+        <label for="new-password">{{ 'security.password.new' | transloco }}</label>
+        <input
+          id="new-password"
+          pInputText
+          type="password"
+          formControlName="newPassword"
+          autocomplete="new-password"
+        />
+        <app-field-error
+          [control]="passwordForm.controls.newPassword"
+          [submitted]="passwordSubmitted()"
+          kind="password"
+        />
+        <small class="field-hint">{{ 'auth.fields.passwordHint' | transloco }}</small>
+      </div>
+      <button class="secondary-button" type="submit" [disabled]="passwordSubmitting()">
+        @if (passwordSubmitting()) {
+          <i class="pi pi-spin pi-spinner"></i>
+        }
+        <span>{{ 'security.password.submit' | transloco }}</span>
+      </button>
+    </form>
+  </section>
+
+  <section class="settings-card settings-card--dark">
+    <div class="settings-card__heading">
+      <span class="settings-card__icon"><i class="pi pi-shield"></i></span>
+      <div>
+        <span class="settings-card__eyebrow">{{ 'security.twoFactor.eyebrow' | transloco }}</span>
+        <h2>{{ 'security.twoFactor.title' | transloco }}</h2>
+      </div>
+    </div>
+    <p class="settings-card__description">{{ 'security.twoFactor.description' | transloco }}</p>
+
+    <div class="two-factor-state">
+      <span class="status-dot"></span>
+      <span>
+        {{ 'security.twoFactor.current' | transloco }}
+        <strong>{{
+          (session.currentUser?.twoFactorEnabled
+            ? 'security.twoFactor.enabled'
+            : 'security.twoFactor.disabled'
+          ) | transloco
+        }}</strong>
+      </span>
+    </div>
+
+    <app-form-feedback [message]="factorError()" />
+    <app-form-feedback [message]="factorSuccess()" tone="success" />
+
+    @if (!factorMode()) {
+      <button
+        class="secondary-button secondary-button--light"
+        type="button"
+        (click)="startTwoFactor(session.currentUser?.twoFactorEnabled ? 'disable' : 'enable')"
+      >
+        <i class="pi pi-shield"></i>
+        <span>{{
+          (session.currentUser?.twoFactorEnabled
+            ? 'security.twoFactor.disableAction'
+            : 'security.twoFactor.enableAction'
+          ) | transloco
+        }}</span>
+      </button>
+    } @else {
+      <form
+        class="auth-form"
+        [formGroup]="factorRequestForm"
+        (ngSubmit)="requestTwoFactorChallenge()"
+        novalidate
+      >
+        <div class="form-field">
+          <label for="two-factor-password">{{ 'security.twoFactor.password' | transloco }}</label>
+          <input
+            id="two-factor-password"
+            pInputText
+            type="password"
+            formControlName="currentPassword"
+            autocomplete="current-password"
+          />
+          <app-field-error
+            [control]="factorRequestForm.controls.currentPassword"
+            [submitted]="factorSubmitted()"
+          />
+        </div>
+        @if (!factorChallengeId()) {
+          <div class="button-row">
+            <button
+              class="secondary-button secondary-button--light"
+              type="submit"
+              [disabled]="factorSubmitting()"
+            >
+              @if (factorSubmitting()) {
+                <i class="pi pi-spin pi-spinner"></i>
+              }
+              <span>{{ 'security.twoFactor.sendCode' | transloco }}</span>
+            </button>
+            <button
+              class="text-button text-button--light"
+              type="button"
+              (click)="cancelTwoFactor()"
+            >
+              {{ 'common.cancel' | transloco }}
+            </button>
+          </div>
+        }
+      </form>
+
+      @if (factorChallengeId()) {
+        <form
+          class="auth-form"
+          [formGroup]="factorVerifyForm"
+          (ngSubmit)="confirmTwoFactorChange()"
+          novalidate
+        >
+          <div class="form-field">
+            <label for="two-factor-otp">{{ 'auth.fields.otp' | transloco }}</label>
+            <input
+              id="two-factor-otp"
+              pInputText
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              formControlName="otp"
+              autocomplete="one-time-code"
+            />
+            <app-field-error
+              [control]="factorVerifyForm.controls.otp"
+              [submitted]="factorVerifySubmitted()"
+              kind="otp"
+            />
+          </div>
+          <div class="button-row">
+            <button
+              class="secondary-button secondary-button--light"
+              type="submit"
+              [disabled]="factorSubmitting()"
+            >
+              @if (factorSubmitting()) {
+                <i class="pi pi-spin pi-spinner"></i>
+              }
+              <span>{{ 'security.twoFactor.confirm' | transloco }}</span>
+            </button>
+            <button
+              class="text-button text-button--light"
+              type="button"
+              (click)="cancelTwoFactor()"
+            >
+              {{ 'common.cancel' | transloco }}
+            </button>
+          </div>
+        </form>
+      }
+    }
+  </section>
+</div>

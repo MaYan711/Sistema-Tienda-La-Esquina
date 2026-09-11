@@ -1,0 +1,140 @@
+{
+  "brand": {
+    "name": "Tienda La Esquina",
+    "caption": "Gestión inteligente",
+    "kicker": "Tu tienda. Tu control.",
+    "footer": "Tienda La Esquina · Plataforma de gestión"
+  },
+  "publicLayout": {
+    "title": "Lleva el control de tu tienda.",
+    "description": "Una forma sencilla de administrar productos, inventario y ventas en un solo lugar.",
+    "securityNote": "Tus datos se protegen con autenticación segura y sesiones verificadas."
+  },
+  "common": {
+    "back": "Volver",
+    "cancel": "Cancelar",
+    "loading": "Cargando...",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
+  },
+  "nav": {
+    "workspace": "Espacio de trabajo",
+    "dashboard": "Resumen",
+    "security": "Seguridad",
+    "admin": "Administración",
+    "logout": "Cerrar sesión",
+    "secureSession": "Sesión protegida",
+    "main": "Navegación principal"
+  },
+  "roles": {
+    "ADMIN": "Administrador",
+    "EMPLOYEE": "Empleado"
+  },
+  "auth": {
+    "fields": {
+      "email": "Correo electrónico",
+      "emailPlaceholder": "persona@ejemplo.com",
+      "password": "Contraseña",
+      "passwordPlaceholder": "Ingresa tu contraseña",
+      "newPassword": "Nueva contraseña",
+      "newPasswordPlaceholder": "Crea una contraseña segura",
+      "otp": "Código de verificación",
+      "otpPlaceholder": "Escribe los 6 dígitos",
+      "passwordHint": "Usa entre 8 y 72 caracteres, con mayúsculas, minúsculas y números."
+    },
+    "login": {
+      "kicker": "Acceso a tu cuenta",
+      "title": "Bienvenido a la tienda.",
+      "description": "Ingresa tus datos para acceder al sistema de Tienda La Esquina.",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "submit": "Iniciar sesión",
+      "registrationDeferred": "El registro de nuevas cuentas estará disponible próximamente."
+    },
+    "verify": {
+      "kicker": "Segundo factor",
+      "title": "Confirma que eres tú.",
+      "description": "Enviamos un código de un solo uso a tu correo para completar el inicio de sesión.",
+      "submit": "Verificar e ingresar",
+      "expiry": "El código es temporal y solo puede utilizarse una vez."
+    },
+    "recovery": {
+      "kicker": "Recuperar acceso",
+      "title": "Resetea tu contraseña.",
+      "description": "Indica tu correo y te enviaremos las instrucciones para recuperar el acceso.",
+      "submit": "Enviar instrucciones",
+      "note": "Por seguridad, la respuesta no revela si el correo está registrado."
+    },
+    "reset": {
+      "kicker": "Confirmar recuperación",
+      "title": "Crea una nueva clave.",
+      "description": "Ingresa el código recibido y define una contraseña nueva para tu cuenta.",
+      "submit": "Guardar contraseña"
+    }
+  },
+  "validation": {
+    "required": "Este campo es obligatorio.",
+    "email": "Ingresa un correo electrónico válido.",
+    "passwordLength": "La contraseña debe tener entre 8 y 72 caracteres.",
+    "passwordPolicy": "Usa mayúsculas, minúsculas y números.",
+    "otp": "El código debe contener 6 dígitos.",
+    "invalid": "Revisa este campo."
+  },
+  "dashboard": {
+    "eyebrow": "Centro de control",
+    "title": "Tu espacio en orden.",
+    "description": "Consulta el estado de tu cuenta y continúa desde donde lo dejaste.",
+    "welcomeLabel": "Sesión iniciada como",
+    "welcomeDescription": "Tu cuenta está activa y lista para usar las herramientas disponibles para tu rol.",
+    "accountStatus": "Cuenta",
+    "active": "Activa",
+    "twoFactorStatus": "Doble factor",
+    "enabled": "Activado",
+    "disabled": "Desactivado",
+    "accessLevel": "Nivel de acceso",
+    "nextEyebrow": "Siguiente paso",
+    "nextTitle": "Mantén todo bajo control.",
+    "securityAction": "Revisar seguridad",
+    "securityDescription": "Cambia tu contraseña o administra el doble factor.",
+    "adminAction": "Panel de administración",
+    "adminDescription": "Comprueba el acceso a las herramientas restringidas."
+  },
+  "security": {
+    "eyebrow": "Cuenta y protección",
+    "title": "Tu seguridad, primero.",
+    "description": "Administra tus credenciales y confirma cómo quieres proteger tu cuenta.",
+    "password": {
+      "eyebrow": "Credenciales",
+      "title": "Cambiar contraseña",
+      "description": "Para actualizarla debes confirmar tu contraseña actual.",
+      "current": "Contraseña actual",
+      "new": "Contraseña nueva",
+      "submit": "Actualizar contraseña"
+    },
+    "twoFactor": {
+      "eyebrow": "Verificación adicional",
+      "title": "Autenticación de dos factores",
+      "description": "Agrega una confirmación OTP cada vez que se inicie sesión en tu cuenta.",
+      "current": "Estado actual:",
+      "enabled": "activada",
+      "disabled": "desactivada",
+      "enableAction": "Activar doble factor",
+      "disableAction": "Desactivar doble factor",
+      "password": "Confirma tu contraseña actual",
+      "sendCode": "Enviar código",
+      "confirm": "Confirmar cambio"
+    }
+  },
+  "admin": {
+    "eyebrow": "Acceso restringido",
+    "title": "Administración.",
+    "description": "Esta área está disponible únicamente para cuentas con rol de administrador.",
+    "checkLabel": "Autorización verificada",
+    "checkTitle": "El acceso funciona correctamente.",
+    "checkDescription": "La respuesta del API confirma que tu sesión tiene permisos ADMIN."
+  },
+  "unauthorized": {
+    "title": "Este espacio no es para tu rol.",
+    "description": "Tu sesión es válida, pero no tienes permisos suficientes para abrir esta ruta.",
+    "action": "Volver al resumen"
+  }
+}
