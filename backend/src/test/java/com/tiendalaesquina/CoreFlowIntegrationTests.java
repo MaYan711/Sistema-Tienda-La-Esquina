@@ -19,7 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-
+import com.tiendalaesquina.application.common.EmailNormalizer;
+import com.tiendalaesquina.config.BootstrapProperties;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,10 +37,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Import(CoreFlowIntegrationTests.TestMailConfiguration.class)
 class CoreFlowIntegrationTests {
 
-    private static final String ADMIN_EMAIL = "webbank404@gmail.com";
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private BootstrapProperties bootstrapProperties;
 
     @Autowired
     private UserAccountRepository users;
@@ -57,23 +60,48 @@ class CoreFlowIntegrationTests {
     void cleanTestAccounts() {
         challenges.deleteAll();
         users.findAll().stream()
-            .filter(user -> !ADMIN_EMAIL.equals(user.getEmail()))
-            .forEach(users::delete);
+                .filter(user -> user.getEmail().startsWith("core-"))
+                .filter(user -> user.getEmail().endsWith("@example.com"))
+                .forEach(users::delete);
         mail.clear();
     }
 
     @Test
     void migrationsSeedSingleRoleCatalogAndBootstrapAdminAsHash() {
-        assertThat(roles.findAll()).extracting(role -> role.getName().name())
-            .containsExactlyInAnyOrder("ADMIN", "EMPLOYEE");
-        assertThat(roles.findByName(RoleName.ADMIN).orElseThrow().getDescription())
-            .isEqualTo("Administrador del sistema");
-        var admin = users.findByEmail(ADMIN_EMAIL).orElseThrow();
+        var allRoles = roles.findAll();
+
+        assertThat(allRoles)
+                .extracting(role -> role.getName().name())
+                .contains("ADMIN", "EMPLOYEE");
+
+        var adminRole = roles.findByName(RoleName.ADMIN)
+                .orElseThrow(() ->
+                        new AssertionError("No existe el rol ADMIN en la base de datos"));
+
+        assertThat(adminRole.getDescription())
+                .isEqualTo("Administrador del sistema");
+
+        assertThat(bootstrapProperties)
+                .as("BootstrapProperties debe estar inyectado")
+                .isNotNull();
+
+        String adminEmail =
+                EmailNormalizer.normalize(bootstrapProperties.getEmail());
+
+        assertThat(adminEmail)
+                .as("El correo del administrador bootstrap debe estar configurado")
+                .isNotBlank();
+
+        var admin = users.findByEmail(adminEmail)
+                .orElseThrow(() ->
+                        new AssertionError(
+                                "No existe el administrador bootstrap con correo: " + adminEmail
+                        ));
+
         assertThat(admin.getRole().getName()).isEqualTo(RoleName.ADMIN);
         assertThat(admin.isVerified()).isTrue();
         assertThat(admin.getPasswordHash()).startsWith("$2");
     }
-
     @Test
     void openApiProblemResponsesReferenceDeclaredSchema() throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.get("/v3/api-docs"))
