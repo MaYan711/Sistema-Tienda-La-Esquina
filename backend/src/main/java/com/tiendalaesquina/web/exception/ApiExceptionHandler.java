@@ -92,6 +92,14 @@ public class ApiExceptionHandler {
         return response(problem, HttpStatus.CONFLICT);
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    ResponseEntity<ProblemDetail> handleAccessDenied(org.springframework.security.access.AccessDeniedException exception,
+                                                    HttpServletRequest request) {
+        ProblemDetail problem = ProblemDetails.create(HttpStatus.FORBIDDEN.value(), "Acceso denegado",
+            "No tiene permisos para acceder a este recurso", "forbidden", request);
+        return response(problem, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(Exception.class)
     ResponseEntity<ProblemDetail> handleUnexpected(Exception exception, HttpServletRequest request) {
         logger.error("Unexpected API failure", exception);
