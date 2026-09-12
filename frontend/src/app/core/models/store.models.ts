@@ -143,3 +143,92 @@ export interface StockNotification {
   readAt: string | null;
   createdAt: string;
 }
+
+export interface Supplier {
+  id: number;
+  name: string;
+  nit: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierSearchParams {
+  search?: string;
+  active?: boolean | null;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  direction?: 'asc' | 'desc';
+}
+
+export interface CreateSupplierRequest {
+  name: string;
+  nit: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+}
+
+export interface UpdateSupplierRequest {
+  name: string;
+  nit: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+}
+
+export interface CreateStockEntryItemRequest {
+  productId: number;
+  quantity: number;
+  unitCost: number;
+}
+
+export interface CreateStockEntryRequest {
+  supplierId: number;
+  entryDate: string;
+  documentNumber: string | null;
+  notes: string | null;
+  items: CreateStockEntryItemRequest[];
+}
+
+export interface StockEntryItem {
+  id: number;
+  productId: number;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  unitCost: number;
+  lineTotal: number;
+}
+
+export interface StockEntry {
+  id: number;
+  supplierId: number;
+  supplierName: string;
+  entryDate: string;
+  documentNumber: string | null;
+  notes: string | null;
+  status: 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
+  createdById: number;
+  createdByEmail: string;
+  confirmedAt: string | null;
+  totalAmount: number;
+  items: StockEntryItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StockEntrySearchParams {
+  supplierId?: number | null;
+  fromDate?: string;
+  toDate?: string;
+  reference?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  direction?: 'asc' | 'desc';
+}

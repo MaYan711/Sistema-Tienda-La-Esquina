@@ -15,10 +15,12 @@ interface NavigationItem {
 const NAVIGATION: readonly NavigationItem[] = [
   { path: '/app/dashboard', labelKey: 'nav.dashboard', icon: 'pi-home' },
   { path: '/app/products', labelKey: 'nav.products', icon: 'pi-box' },
+  { path: '/app/suppliers', labelKey: 'nav.suppliers', icon: 'pi-truck', roles: ['ADMIN'] },
   { path: '/app/alerts', labelKey: 'nav.alerts', icon: 'pi-bell', roles: ['ADMIN'] },
   { path: '/app/inventory/movements', labelKey: 'nav.movements', icon: 'pi-history', roles: ['ADMIN'] },
   { path: '/app/users', labelKey: 'nav.users', icon: 'pi-users', roles: ['ADMIN'] },
   { path: '/app/security', labelKey: 'nav.security', icon: 'pi-shield' },
+  {path: '/app/stock-entries',labelKey: 'nav.stockEntries',icon: 'pi-download',roles: ['ADMIN'],},
 ];
 
 @Component({

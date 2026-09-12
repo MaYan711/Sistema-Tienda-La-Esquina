@@ -1,0 +1,429 @@
+<div class="page-toolbar">
+  <app-page-heading
+    eyebrowKey="stockEntries.eyebrow"
+    titleKey="stockEntries.title"
+    descriptionKey="stockEntries.description"
+  />
+
+  <button
+    class="primary-button primary-button--inline"
+    type="button"
+    (click)="openCreate()"
+  >
+    <i class="pi pi-plus"></i>
+    <span>Nueva entrada</span>
+  </button>
+</div>
+
+<app-form-feedback [message]="errorMessage()" />
+<app-form-feedback [message]="successMessage()" tone="success" />
+
+<form class="filters-panel" [formGroup]="filters">
+  <label>
+    <span>Proveedor</span>
+    <select formControlName="supplierId">
+      <option value="">Todos</option>
+
+      @for (supplier of suppliers(); track supplier.id) {
+        <option [value]="supplier.id">
+          {{ supplier.name }}
+        </option>
+      }
+    </select>
+  </label>
+
+  <label>
+    <span>Factura o referencia</span>
+    <input
+      type="search"
+      formControlName="reference"
+      placeholder="Ej. FAC-001582"
+    />
+  </label>
+
+  <label>
+    <span>Desde</span>
+    <input type="date" formControlName="fromDate" />
+  </label>
+
+  <label>
+    <span>Hasta</span>
+    <input type="date" formControlName="toDate" />
+  </label>
+
+  <div class="filter-actions">
+    <button
+      class="secondary-button secondary-button--compact"
+      type="button"
+      (click)="clearFilters()"
+    >
+      Limpiar
+    </button>
+
+    <button
+      class="primary-button primary-button--compact"
+      type="button"
+      (click)="loadEntries(0)"
+    >
+      Buscar
+    </button>
+  </div>
+</form>
+
+<section class="data-panel">
+  @if (loading()) {
+    <div class="table-state">
+      <i class="pi pi-spin pi-spinner"></i>
+      Cargando entradas...
+    </div>
+  } @else if (entries().length === 0) {
+    <div class="table-state">
+      No se encontraron entradas de mercadería.
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="store-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Proveedor</th>
+            <th>Documento</th>
+            <th>Productos</th>
+            <th>Total</th>
+            <th>Registrado por</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (entry of entries(); track entry.id) {
+            <tr>
+              <td>
+                <code>#{{ entry.id }}</code>
+              </td>
+
+              <td>{{ entry.entryDate | date: 'dd/MM/yyyy':'America/Guatemala' }}</td>
+
+              <td>
+                <div class="supplier-cell">
+                  <div class="supplier-avatar">
+                    {{ entry.supplierName.charAt(0).toUpperCase() }}
+                  </div>
+
+                  <strong>{{ entry.supplierName }}</strong>
+                </div>
+              </td>
+
+              <td>{{ entry.documentNumber || 'Sin referencia' }}</td>
+
+              <td>{{ entry.items.length }}</td>
+
+              <td>
+                <strong>Q {{ entry.totalAmount | number: '1.2-2' }}</strong>
+              </td>
+
+              <td>{{ entry.createdByEmail }}</td>
+
+              <td>
+                <span class="status-pill status-confirmed">
+                  {{ entry.status === 'CONFIRMED' ? 'Confirmada' : entry.status }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="table-footer">
+      <span>
+        Mostrando {{ pageStart() }}-{{ pageEnd() }}
+        de {{ totalElements() }} entradas
+      </span>
+
+      <div class="pagination-actions">
+        <button
+          type="button"
+          [disabled]="page() === 0"
+          (click)="previousPage()"
+        >
+          <i class="pi pi-chevron-left"></i>
+        </button>
+
+        <span>
+          Página {{ page() + 1 }} de {{ totalPages() || 1 }}
+        </span>
+
+        <button
+          type="button"
+          [disabled]="page() + 1 >= totalPages()"
+          (click)="nextPage()"
+        >
+          <i class="pi pi-chevron-right"></i>
+        </button>
+      </div>
+    </footer>
+  }
+</section>
+
+@if (entryModalOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="closeCreate()"
+  ></div>
+
+  <section
+    class="store-modal store-modal--wide"
+    role="dialog"
+    aria-modal="true"
+  >
+    <header>
+      <div>
+        <span>Entrada de mercadería</span>
+        <h2>Nueva entrada</h2>
+      </div>
+
+      <button
+        type="button"
+        title="Cerrar"
+        (click)="closeCreate()"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+
+    <form
+      class="entry-form"
+      [formGroup]="entryForm"
+      (ngSubmit)="saveEntry()"
+    >
+      <section class="entry-section">
+        <div class="section-heading">
+          <div>
+            <span>Información general</span>
+            <h3>Datos de la entrada</h3>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Proveedor</span>
+
+            <select formControlName="supplierId">
+              <option [value]="0">Selecciona un proveedor</option>
+
+              @for (supplier of suppliers(); track supplier.id) {
+                <option [value]="supplier.id">
+                  {{ supplier.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>Fecha</span>
+            <input type="date" formControlName="entryDate" />
+          </label>
+
+          <label>
+            <span>Factura o referencia</span>
+            <input
+              formControlName="documentNumber"
+              placeholder="Ej. FAC-001582"
+            />
+          </label>
+
+          <label class="full-field">
+            <span>Observaciones</span>
+            <textarea
+              rows="2"
+              formControlName="notes"
+              placeholder="Observaciones opcionales"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="entry-section product-section">
+        <div class="section-heading">
+          <div>
+            <span>Productos recibidos</span>
+            <h3>Agregar productos</h3>
+          </div>
+        </div>
+
+        <div class="product-entry" [formGroup]="productForm">
+          <div class="product-search-field">
+            <label>
+              <span>Producto</span>
+
+              <input
+                type="search"
+                formControlName="search"
+                placeholder="Código o nombre del producto"
+                autocomplete="off"
+              />
+            </label>
+
+            @if (productResults().length > 0) {
+              <div class="search-results">
+                @for (product of productResults(); track product.id) {
+                  <button
+                    type="button"
+                    class="search-result"
+                    (click)="selectProduct(product)"
+                  >
+                    <div>
+                      <strong>{{ product.name }}</strong>
+                      <small>
+                        {{ product.code }} · Stock actual:
+                        {{ product.currentStock }}
+                      </small>
+                    </div>
+
+                    <span>
+                      Q {{ product.purchasePrice | number: '1.2-2' }}
+                    </span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <label>
+            <span>Cantidad</span>
+            <input
+              type="number"
+              min="0.001"
+              step="0.001"
+              formControlName="quantity"
+            />
+          </label>
+
+          <label>
+            <span>Costo unitario</span>
+            <div class="currency-input">
+              <span>Q</span>
+              <input
+                type="number"
+                min="0.0001"
+                step="0.01"
+                formControlName="unitCost"
+              />
+            </div>
+          </label>
+
+          <div class="product-action">
+            <button
+              class="primary-button primary-button--compact"
+              type="button"
+              (click)="addProduct()"
+            >
+              <i class="pi pi-plus"></i>
+              Agregar
+            </button>
+          </div>
+        </div>
+
+        @if (selectedItems().length === 0) {
+          <div class="empty-products">
+            Aún no has agregado productos a esta entrada.
+          </div>
+        } @else {
+          <div class="selected-products">
+            <div class="table-scroll">
+              <table class="store-table store-table--products">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Costo U.</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  @for (item of selectedItems(); track item.product.id) {
+                    <tr>
+                      <td>
+                        <div class="product-cell">
+                          <div class="product-thumb">
+                            @if (item.product.imageUrl) {
+                              <img
+                                [src]="item.product.imageUrl"
+                                [alt]="item.product.name"
+                              />
+                            } @else {
+                              <i class="pi pi-box"></i>
+                            }
+                          </div>
+
+                          <div>
+                            <strong>{{ item.product.name }}</strong>
+                            <small>{{ item.product.code }}</small>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>{{ item.quantity }}</td>
+
+                      <td>Q {{ item.unitCost | number: '1.2-4' }}</td>
+
+                      <td>
+                        <strong>
+                          Q {{ item.lineTotal | number: '1.2-2' }}
+                        </strong>
+                      </td>
+
+                      <td>
+                        <button
+                          class="remove-item"
+                          type="button"
+                          title="Quitar producto"
+                          (click)="removeItem(item.product.id)"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="entry-total">
+              <span>Total de la entrada</span>
+              <strong>Q {{ totalAmount() | number: '1.2-2' }}</strong>
+            </div>
+          </div>
+        }
+      </section>
+
+      <footer class="modal-actions">
+        <button
+          class="secondary-button secondary-button--compact"
+          type="button"
+          (click)="closeCreate()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          class="primary-button primary-button--compact"
+          type="submit"
+          [disabled]="saving()"
+        >
+          <i class="pi pi-check"></i>
+
+          {{
+            saving()
+              ? 'Registrando...'
+              : 'Confirmar entrada'
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+}
