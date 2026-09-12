@@ -56,6 +56,9 @@ class CoreFlowIntegrationTests {
     @Autowired
     private TestMailService mail;
 
+    @Autowired
+    private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+
     @BeforeEach
     void cleanTestAccounts() {
         challenges.deleteAll();
@@ -107,42 +110,22 @@ class CoreFlowIntegrationTests {
         mockMvc.perform(MockMvcRequestBuilders.get("/v3/api-docs"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.components.schemas.ProblemDetail").exists())
-            .andExpect(jsonPath("$.paths['/auth/register'].post.responses['400']"
+            .andExpect(jsonPath("$.paths['/auth/login'].post.responses['400']"
                 + ".content['application/problem+json'].schema['$ref']")
                 .value("#/components/schemas/ProblemDetail"));
     }
 
     @Test
-    void registrationOtpIsPurposeBoundSingleUseAndEnablesLogin() throws Exception {
-        String email = uniqueEmail();
-        MvcResult registration = mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
+    void publicRegistrationIsDisabled() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"password\":\"Password123\"}"))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.challengeId").isNotEmpty())
-            .andReturn();
+                .content("{\"email\":\"test@example.com\",\"password\":\"Password123\"}"))
+            .andExpect(status().isUnauthorized());
+    }
 
-        UUID challengeId = UUID.fromString(extract(registration, "challengeId"));
-        assertThat(mail.last().purpose()).isEqualTo(OtpPurpose.REGISTRATION);
-        OtpChallenge stored = challenges.findById(challengeId).orElseThrow();
-        assertThat(stored.getCodeHash()).isNotEqualTo(mail.last().code());
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register/verify")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"challengeId\":\""
-                    + challengeId + "\",\"otp\":\"111111\"}"))
-            .andExpect(status().isBadRequest())
-            .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-            .andExpect(jsonPath("$.code").value("invalid_otp"));
-        assertThat(challenges.findById(challengeId).orElseThrow().getAttempts()).isEqualTo(1);
-
-        String code = mail.last().code();
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register/verify")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"challengeId\":\""
-                    + challengeId + "\",\"otp\":\"" + code + "\"}"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("La cuenta fue verificada correctamente"));
+    @Test
+    void verifiedUserCanLoginAndAccessMe() throws Exception {
+        String email = createVerifiedUser();
 
         String login = mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -156,14 +139,8 @@ class CoreFlowIntegrationTests {
                 .header("Authorization", "Bearer " + token))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.email").value(email))
-            .andExpect(jsonPath("$.role").value(RoleName.EMPLOYEE.name()));
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register/verify")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"challengeId\":\""
-                    + challengeId + "\",\"otp\":\"" + code + "\"}"))
-            .andExpect(status().isConflict())
-            .andExpect(jsonPath("$.code").value("account_already_verified"));
+            .andExpect(jsonPath("$.role").value(RoleName.EMPLOYEE.name()))
+            .andExpect(jsonPath("$.enabled").value(true));
     }
 
     @Test
@@ -261,20 +238,12 @@ class CoreFlowIntegrationTests {
             .andExpect(jsonPath("$.code").value("invalid_token"));
     }
 
-    private String createVerifiedUser() throws Exception {
+    private String createVerifiedUser() {
         String email = uniqueEmail();
-        MvcResult registration = mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"password\":\"Password123\"}"))
-            .andExpect(status().isCreated())
-            .andReturn();
-        String challengeId = extract(registration, "challengeId");
-        String code = mail.last().code();
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register/verify")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"" + email + "\",\"challengeId\":\""
-                    + challengeId + "\",\"otp\":\"" + code + "\"}"))
-            .andExpect(status().isOk());
+        var employeeRole = roles.findByName(RoleName.EMPLOYEE).orElseThrow();
+        users.save(new com.tiendalaesquina.domain.model.UserAccount(
+            email, passwordEncoder.encode("Password123"), employeeRole, true
+        ));
         return email;
     }
 

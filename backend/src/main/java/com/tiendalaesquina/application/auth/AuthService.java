@@ -203,7 +203,8 @@ public class AuthService {
 
     public UserResponse toResponse(UserAccount user) {
         return new UserResponse(user.getId(), user.getEmail(), user.getRole().getName().name(),
-            user.isVerified(), user.isTwoFactorEnabled());
+            user.isVerified(), user.isEnabled(), user.isTwoFactorEnabled(),
+            user.getCreatedAt(), user.getUpdatedAt());
     }
 
     private void ensureActive(UserAccount user) {

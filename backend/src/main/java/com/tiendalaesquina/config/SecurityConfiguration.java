@@ -29,13 +29,12 @@ public class SecurityConfiguration {
                 .accessDeniedHandler(accessDeniedHandler))
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(
-                    "/auth/register", "/auth/register/**", "/auth/registration/**",
-                    "/auth/verify-registration", "/auth/login", "/auth/login/**",
+                    "/auth/login", "/auth/login/**",
                     "/auth/verify-login", "/auth/password-recovery", "/auth/password-recovery/**",
                     "/auth/forgot-password", "/auth/reset-password"
                 ).permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/admin/**", "/users", "/users/**").hasRole("ADMIN")
                 .anyRequest().authenticated())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

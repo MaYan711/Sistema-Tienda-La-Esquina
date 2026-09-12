@@ -9,13 +9,11 @@ import com.tiendalaesquina.web.dto.LoginResponse;
 import com.tiendalaesquina.web.dto.MessageResponse;
 import com.tiendalaesquina.web.dto.PasswordChangeResponse;
 import com.tiendalaesquina.web.dto.RecoveryRequest;
-import com.tiendalaesquina.web.dto.RegisterRequest;
 import com.tiendalaesquina.web.dto.TwoFactorRequest;
 import com.tiendalaesquina.web.dto.UserResponse;
 import com.tiendalaesquina.web.dto.VerifyChallengeRequest;
 import com.tiendalaesquina.web.dto.VerifyLoginRequest;
 import com.tiendalaesquina.web.dto.VerifyRecoveryRequest;
-import com.tiendalaesquina.web.dto.VerifyRegistrationRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,32 +29,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @RestController
 @RequestMapping("/auth")
-@Tag(name = "Autenticación", description = "Registro, inicio de sesión, OTP y contraseñas")
+@Tag(name = "Autenticación", description = "Inicio de sesión, OTP y contraseñas")
 public class AuthController {
 
     private final AuthService authService;
 
     public AuthController(AuthService authService) {
         this.authService = authService;
-    }
-
-    @PostMapping("/register")
-    @Operation(summary = "Registrar una cuenta", description = "Crea una cuenta pendiente y envía un OTP de registro")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ChallengeResponse register(@Valid @RequestBody RegisterRequest request) {
-        return authService.register(request);
-    }
-
-    @PostMapping({"/register/resend", "/registration/resend"})
-    @Operation(summary = "Reenviar el OTP de registro")
-    public ChallengeResponse resendRegistration(@Valid @RequestBody RecoveryRequest request) {
-        return authService.resendRegistration(request.email());
-    }
-
-    @PostMapping({"/register/verify", "/verify-registration"})
-    @Operation(summary = "Verificar el registro")
-    public MessageResponse verifyRegistration(@Valid @RequestBody VerifyRegistrationRequest request) {
-        return authService.verifyRegistration(request.email(), request.challengeId(), request.otp());
     }
 
     @PostMapping("/login")
