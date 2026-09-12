@@ -1,0 +1,184 @@
+<div class="page-toolbar">
+  <app-page-heading
+    eyebrowKey="users.eyebrow"
+    titleKey="users.title"
+    descriptionKey="users.description"
+  />
+  <button class="primary-button primary-button--inline new-user-button" type="button" (click)="openCreate()">
+    <i class="pi pi-user-plus"></i>
+    <span>{{ 'users.new' | transloco }}</span>
+  </button>
+</div>
+
+<app-form-feedback [message]="errorMessage()" />
+<app-form-feedback [message]="successMessage()" tone="success" />
+
+<section class="filters-panel">
+  <label>
+    <span>{{ 'users.filters.search' | transloco }}</span>
+    <div class="search-field">
+      <i class="pi pi-search"></i>
+      <input type="search" [formControl]="filters.controls.search" placeholder="Correo del usuario" />
+    </div>
+  </label>
+
+  <label>
+    <span>{{ 'users.filters.role' | transloco }}</span>
+    <select [formControl]="filters.controls.role">
+      <option value="">Todos</option>
+      <option value="ADMIN">Administrador</option>
+      <option value="EMPLOYEE">Empleado</option>
+    </select>
+  </label>
+
+  <label>
+    <span>{{ 'users.filters.status' | transloco }}</span>
+    <select [formControl]="filters.controls.enabled">
+      <option value="">Todos</option>
+      <option value="true">Activos</option>
+      <option value="false">Desactivados</option>
+    </select>
+  </label>
+
+  <div class="filter-actions">
+    <button class="secondary-button secondary-button--compact" type="button" (click)="clearFilters()">
+      Limpiar
+    </button>
+  </div>
+</section>
+
+<section class="data-panel">
+  <div class="table-scroll">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>2FA</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (loading()) {
+          <tr><td class="table-state" colspan="6"><i class="pi pi-spin pi-spinner"></i> Cargando usuarios...</td></tr>
+        } @else if (users().length === 0) {
+          <tr><td class="table-state" colspan="6">No se encontraron usuarios con esos filtros.</td></tr>
+        } @else {
+          @for (user of users(); track user.id) {
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <span class="user-avatar" [class.user-avatar--admin]="user.role === 'ADMIN'">{{ initials(user) }}</span>
+                  <div>
+                    <strong>{{ user.email }}</strong>
+                    <small>
+                      @if (isCurrentUser(user)) { <span class="self-label">Tu cuenta</span> · }
+                      {{ user.verified ? 'Verificada' : 'Sin verificar' }}
+                    </small>
+                  </div>
+                </div>
+              </td>
+              <td><span class="role-pill" [class.role-pill--admin]="user.role === 'ADMIN'">{{ roleLabel(user.role) }}</span></td>
+              <td>
+                <span class="status-pill" [class.status-pill--enabled]="user.enabled" [class.status-pill--disabled]="!user.enabled">
+                  {{ user.enabled ? 'Activo' : 'Desactivado' }}
+                </span>
+              </td>
+              <td>
+                <span class="two-factor" [class.two-factor--on]="user.twoFactorEnabled">
+                  <i [class]="user.twoFactorEnabled ? 'pi pi-shield' : 'pi pi-shield'"></i>
+                  {{ user.twoFactorEnabled ? 'Activado' : 'Desactivado' }}
+                </span>
+              </td>
+              <td>{{ formatDate(user.createdAt) }}</td>
+              <td>
+                <div class="row-actions">
+                  <button type="button" title="Editar usuario" (click)="openEdit(user)"><i class="pi pi-pencil"></i></button>
+                  <button
+                    type="button"
+                    [disabled]="isCurrentUser(user)"
+                    [title]="isCurrentUser(user) ? 'No puedes desactivar tu propia cuenta' : (user.enabled ? 'Desactivar usuario' : 'Activar usuario')"
+                    (click)="toggleEnabled(user)"
+                  >
+                    <i [class]="user.enabled ? 'pi pi-user-minus' : 'pi pi-user-plus'"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="table-footer">
+    <span>Mostrando {{ pageStart() }}-{{ pageEnd() }} de {{ totalElements() }} usuarios</span>
+    <div class="pagination-actions">
+      <button type="button" [disabled]="page() === 0" (click)="previousPage()"><i class="pi pi-chevron-left"></i></button>
+      <span>Página {{ page() + 1 }} de {{ totalPages() || 1 }}</span>
+      <button type="button" [disabled]="page() + 1 >= totalPages()" (click)="nextPage()"><i class="pi pi-chevron-right"></i></button>
+    </div>
+  </footer>
+</section>
+
+@if (userModalOpen()) {
+  <div class="modal-backdrop" (click)="closeUserModal()"></div>
+  <section class="user-modal" role="dialog" aria-modal="true">
+    <header>
+      <div>
+        <span>Administración</span>
+        <h2>{{ selectedUser() ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+      </div>
+      <button type="button" (click)="closeUserModal()"><i class="pi pi-times"></i></button>
+    </header>
+
+    <form class="modal-form" [formGroup]="userForm" (ngSubmit)="saveUser()">
+      <label>
+        <span>Correo electrónico</span>
+        <input type="email" formControlName="email" placeholder="empleado@tiendalaesquina.gt" />
+        @if (userForm.controls.email.touched && userForm.controls.email.invalid) {
+          <small class="field-error">Ingresa un correo electrónico válido.</small>
+        }
+      </label>
+
+      @if (!selectedUser()) {
+        <label>
+          <span>Contraseña temporal</span>
+          <input type="password" formControlName="password" placeholder="Empleado123" autocomplete="new-password" />
+          <small class="field-hint">Entre 8 y 72 caracteres, con mayúscula, minúscula y número.</small>
+          @if (userForm.controls.password.touched && userForm.controls.password.invalid) {
+            <small class="field-error">La contraseña no cumple la política requerida.</small>
+          }
+        </label>
+      }
+
+      <label>
+        <span>Rol</span>
+        <select formControlName="role">
+          <option value="EMPLOYEE">Empleado</option>
+          <option value="ADMIN">Administrador</option>
+        </select>
+        @if (selectedUser() && isCurrentUser(selectedUser()!)) {
+          <small class="field-hint">No puedes cambiar tu propio rol de administrador.</small>
+        }
+      </label>
+
+      @if (selectedUser()) {
+        <div class="account-summary">
+          <div><span>Estado</span><strong>{{ selectedUser()!.enabled ? 'Activo' : 'Desactivado' }}</strong></div>
+          <div><span>2FA</span><strong>{{ selectedUser()!.twoFactorEnabled ? 'Activado' : 'Desactivado' }}</strong></div>
+          <div><span>Última actualización</span><strong>{{ formatDate(selectedUser()!.updatedAt) }}</strong></div>
+        </div>
+      }
+
+      <footer>
+        <button class="secondary-button secondary-button--compact" type="button" (click)="closeUserModal()">Cancelar</button>
+        <button class="primary-button primary-button--compact" type="submit" [disabled]="saving()">
+          {{ saving() ? 'Guardando...' : (selectedUser() ? 'Guardar cambios' : 'Crear usuario') }}
+        </button>
+      </footer>
+    </form>
+  </section>
+}
