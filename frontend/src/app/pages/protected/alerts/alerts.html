@@ -2,6 +2,35 @@
 <app-form-feedback [message]="errorMessage()" />
 <app-form-feedback [message]="successMessage()" tone="success" />
 
+<section class="alerts-summary" aria-label="Resumen de alertas de inventario">
+  <article class="summary-card summary-card--warning">
+    <span class="summary-card__icon"><i class="pi pi-exclamation-triangle"></i></span>
+    <div class="summary-card__content">
+      <span class="summary-card__label">Existencia baja</span>
+      <strong>{{ summaryLoading() ? '—' : lowStockCount() }}</strong>
+      <small>Requieren reposición</small>
+    </div>
+  </article>
+
+  <article class="summary-card summary-card--danger">
+    <span class="summary-card__icon"><i class="pi pi-times-circle"></i></span>
+    <div class="summary-card__content">
+      <span class="summary-card__label">Productos agotados</span>
+      <strong>{{ summaryLoading() ? '—' : outOfStockCount() }}</strong>
+      <small>Sin unidades disponibles</small>
+    </div>
+  </article>
+
+  <article class="summary-card summary-card--success">
+    <span class="summary-card__icon"><i class="pi pi-check-circle"></i></span>
+    <div class="summary-card__content">
+      <span class="summary-card__label">Revisadas hoy</span>
+      <strong>{{ summaryLoading() ? '—' : reviewedTodayCount() }}</strong>
+      <small>Notificaciones atendidas</small>
+    </div>
+  </article>
+</section>
+
 <form class="alerts-filters" [formGroup]="filters" (ngSubmit)="applyFilters()">
   <label><span>Tipo</span><select formControlName="type"><option value="">Todos</option><option value="LOW_STOCK">Existencia baja</option><option value="OUT_OF_STOCK">Agotado</option></select></label>
   <label><span>Estado</span><select formControlName="readState"><option value="unread">Pendientes</option><option value="read">Leídas</option><option value="all">Todas</option></select></label>
