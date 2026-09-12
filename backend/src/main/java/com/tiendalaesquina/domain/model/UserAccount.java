@@ -141,4 +141,12 @@ public class UserAccount {
     public void setRole(Role role) {
         this.role = role;
     }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
 }
