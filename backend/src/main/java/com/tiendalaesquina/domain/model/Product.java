@@ -176,7 +176,7 @@ public class Product {
         this.imageUrl = imageUrl;
         this.category = category;
         this.unit = unit;
-        this.purchasePrice = purchasePrice;
+        this.purchasePrice = purchasePrice;;
         this.salePrice = salePrice;
         this.minimumStock = minimumStock;
         this.updatedBy = actor;
@@ -189,6 +189,11 @@ public class Product {
 
     public void setCurrentStock(BigDecimal currentStock, UserAccount actor) {
         this.currentStock = currentStock;
+        this.updatedBy = actor;
+    }
+
+    public void setPurchasePrice(BigDecimal purchasePrice, UserAccount actor) {
+        this.purchasePrice = purchasePrice;
         this.updatedBy = actor;
     }
 }
