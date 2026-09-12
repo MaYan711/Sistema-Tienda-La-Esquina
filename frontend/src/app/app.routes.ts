@@ -91,6 +91,15 @@ export const routes: Routes = [
         data: { roles: ['ADMIN'] },
       },
       {
+        path: 'users',
+        loadComponent: () =>
+          import('./pages/protected/users/users').then(
+            (module) => module.UsersPageComponent,
+          ),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+      },
+      {
         path: 'admin',
         loadComponent: () =>
           import('./pages/protected/admin/admin').then((module) => module.AdminPageComponent),

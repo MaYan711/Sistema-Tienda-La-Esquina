@@ -27,7 +27,8 @@
     "main": "Navegación principal",
     "products": "Productos",
     "alerts": "Alertas",
-    "movements": "Movimientos"
+    "movements": "Movimientos",
+    "users": "Usuarios"
   },
   "roles": {
     "ADMIN": "Administrador",
@@ -160,5 +161,16 @@
     "eyebrow": "Trazabilidad",
     "title": "Movimientos de inventario",
     "description": "Consulta el historial de entradas, ventas y ajustes que modificaron las existencias."
+  },
+  "users": {
+    "eyebrow": "Equipo y accesos",
+    "title": "Usuarios y empleados",
+    "description": "Administra las cuentas del personal, sus roles y el acceso al sistema.",
+    "new": "Nuevo usuario",
+    "filters": {
+      "search": "Buscar",
+      "role": "Rol",
+      "status": "Estado"
+    }
   }
 }

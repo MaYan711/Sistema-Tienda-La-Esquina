@@ -55,10 +55,10 @@ export interface UserResponse {
   email: string;
   role: Role;
   verified: boolean;
-  enabled?: boolean;
+  enabled: boolean;
   twoFactorEnabled: boolean;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StoredSession {
