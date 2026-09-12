@@ -72,6 +72,26 @@ export const routes: Routes = [
             (module) => module.ProductsPageComponent,
           ),
       },
+
+      {
+          path: 'suppliers',
+          loadComponent: () =>
+            import('./pages/protected/suppliers/suppliers').then(
+              (module) => module.SuppliersPageComponent,
+            ),
+          canActivate: [roleGuard],
+          data: { roles: ['ADMIN'] },
+        },
+
+              {
+        path: 'stock-entries',
+        loadComponent: () =>
+          import('./pages/protected/stock-entries/stock-entries').then(
+            (module) => module.StockEntriesPageComponent,
+          ),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN'] },
+      },
       {
         path: 'inventory/movements',
         loadComponent: () =>

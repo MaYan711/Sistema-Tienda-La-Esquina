@@ -1,0 +1,329 @@
+<div class="page-toolbar">
+  <app-page-heading
+    eyebrowKey="suppliers.eyebrow"
+    titleKey="suppliers.title"
+    descriptionKey="suppliers.description"
+  />
+
+  <button
+    class="primary-button primary-button--inline"
+    type="button"
+    (click)="openCreate()"
+  >
+    <i class="pi pi-plus"></i>
+    <span>Nuevo proveedor</span>
+  </button>
+</div>
+
+<app-form-feedback [message]="errorMessage()" />
+<app-form-feedback [message]="successMessage()" tone="success" />
+
+<section class="supplier-summary">
+  <article class="summary-card">
+    <div class="summary-icon">
+      <i class="pi pi-truck"></i>
+    </div>
+    <div>
+      <span>Proveedores activos</span>
+      <strong>{{ activeSupplierCount() }}</strong>
+      <small>Disponibles actualmente</small>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon summary-icon--green">
+      <i class="pi pi-shopping-cart"></i>
+    </div>
+    <div>
+      <span>Proveedores mostrados</span>
+      <strong>{{ totalElements() }}</strong>
+      <small>Según los filtros aplicados</small>
+    </div>
+  </article>
+
+  <article class="summary-card">
+    <div class="summary-icon summary-icon--yellow">
+      <i class="pi pi-check-circle"></i>
+    </div>
+    <div>
+      <span>Estado del módulo</span>
+      <strong>Activo</strong>
+      <small>Gestión de abastecimiento</small>
+    </div>
+  </article>
+</section>
+
+<form class="filters-panel" [formGroup]="filters">
+  <label>
+    <span>Buscar proveedor</span>
+    <input
+      type="search"
+      formControlName="search"
+      placeholder="Nombre, NIT, teléfono o correo"
+    />
+  </label>
+
+  <label>
+    <span>Estado</span>
+    <select formControlName="active">
+      <option value="">Todos</option>
+      <option value="true">Activos</option>
+      <option value="false">Inactivos</option>
+    </select>
+  </label>
+
+  <div class="filter-actions">
+    <button
+      class="secondary-button secondary-button--compact"
+      type="button"
+      (click)="clearFilters()"
+    >
+      Limpiar
+    </button>
+  </div>
+</form>
+
+<section class="data-panel">
+  @if (loading()) {
+    <div class="table-state">
+      <i class="pi pi-spin pi-spinner"></i>
+      Cargando proveedores...
+    </div>
+  } @else if (suppliers().length === 0) {
+    <div class="table-state">
+      No se encontraron proveedores con estos filtros.
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="store-table">
+        <thead>
+          <tr>
+            <th>Proveedor</th>
+            <th>NIT</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Dirección</th>
+            <th>Estado</th>
+            <th class="actions-column">Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (supplier of suppliers(); track supplier.id) {
+            <tr>
+              <td>
+                <div class="supplier-cell">
+                  <div class="supplier-avatar">
+                    {{ supplier.name.charAt(0).toUpperCase() }}
+                  </div>
+
+                  <div>
+                    <strong>{{ supplier.name }}</strong>
+                    <small>ID {{ supplier.id }}</small>
+                  </div>
+                </div>
+              </td>
+
+              <td>
+                <code>{{ supplier.nit || 'Sin NIT' }}</code>
+              </td>
+
+              <td>{{ supplier.phone || 'No registrado' }}</td>
+
+              <td>{{ supplier.email || 'No registrado' }}</td>
+
+              <td>
+                <span class="address-text">
+                  {{ supplier.address || 'No registrada' }}
+                </span>
+              </td>
+
+              <td>
+                <span
+                  class="status-pill"
+                  [class.status-active]="supplier.active"
+                  [class.status-inactive]="!supplier.active"
+                >
+                  {{ supplier.active ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+
+              <td>
+                <div class="row-actions">
+                  <button
+                    type="button"
+                    title="Editar proveedor"
+                    (click)="openEdit(supplier)"
+                  >
+                    <i class="pi pi-pencil"></i>
+                  </button>
+
+                  <button
+                    type="button"
+                    [title]="supplier.active ? 'Desactivar proveedor' : 'Activar proveedor'"
+                    (click)="toggleActive(supplier)"
+                  >
+                    <i
+                      [class]="supplier.active
+                        ? 'pi pi-ban'
+                        : 'pi pi-check-circle'"
+                    ></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="table-footer">
+      <span>
+        Mostrando {{ pageStart() }}-{{ pageEnd() }}
+        de {{ totalElements() }} proveedores
+      </span>
+
+      <div class="pagination-actions">
+        <button
+          type="button"
+          [disabled]="page() === 0"
+          (click)="previousPage()"
+        >
+          <i class="pi pi-chevron-left"></i>
+        </button>
+
+        <span>
+          Página {{ page() + 1 }} de {{ totalPages() || 1 }}
+        </span>
+
+        <button
+          type="button"
+          [disabled]="page() + 1 >= totalPages()"
+          (click)="nextPage()"
+        >
+          <i class="pi pi-chevron-right"></i>
+        </button>
+      </div>
+    </footer>
+  }
+</section>
+
+@if (supplierModalOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="closeModal()"
+  ></div>
+
+  <section
+    class="store-modal"
+    role="dialog"
+    aria-modal="true"
+  >
+    <header>
+      <div>
+        <span>Proveedores</span>
+        <h2>
+          {{ selectedSupplier() ? 'Editar proveedor' : 'Nuevo proveedor' }}
+        </h2>
+      </div>
+
+      <button
+        type="button"
+        title="Cerrar"
+        (click)="closeModal()"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+
+    <form
+      class="modal-form"
+      [formGroup]="supplierForm"
+      (ngSubmit)="saveSupplier()"
+    >
+      <label>
+        <span>Nombre</span>
+        <input
+          formControlName="name"
+          placeholder="Ej. Distribuidora Xela"
+        />
+
+        @if (
+          supplierForm.controls.name.invalid &&
+          supplierForm.controls.name.touched
+        ) {
+          <small class="field-error">
+            El nombre es obligatorio.
+          </small>
+        }
+      </label>
+
+      <label>
+        <span>NIT</span>
+        <input
+          formControlName="nit"
+          placeholder="Ej. 548796-2"
+        />
+      </label>
+
+      <label>
+        <span>Teléfono</span>
+        <input
+          formControlName="phone"
+          placeholder="Ej. 7765-1122"
+        />
+      </label>
+
+      <label>
+        <span>Correo electrónico</span>
+        <input
+          type="email"
+          formControlName="email"
+          placeholder="ventas@proveedor.gt"
+        />
+
+        @if (
+          supplierForm.controls.email.invalid &&
+          supplierForm.controls.email.touched
+        ) {
+          <small class="field-error">
+            Ingresa un correo válido.
+          </small>
+        }
+      </label>
+
+      <label>
+        <span>Dirección</span>
+        <textarea
+          rows="3"
+          formControlName="address"
+          placeholder="Ej. Zona 3, Quetzaltenango"
+        ></textarea>
+      </label>
+
+      <footer>
+        <button
+          class="secondary-button secondary-button--compact"
+          type="button"
+          (click)="closeModal()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          class="primary-button primary-button--compact"
+          type="submit"
+          [disabled]="saving()"
+        >
+          {{
+            saving()
+              ? 'Guardando...'
+              : selectedSupplier()
+                ? 'Guardar cambios'
+                : 'Crear proveedor'
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+}

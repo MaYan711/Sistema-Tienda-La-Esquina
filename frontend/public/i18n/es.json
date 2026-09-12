@@ -26,9 +26,12 @@
     "secureSession": "Sesión protegida",
     "main": "Navegación principal",
     "products": "Productos",
+    "suppliers": "Proveedores",
+    "stockEntries": "Entradas",
     "alerts": "Alertas",
     "movements": "Movimientos",
     "users": "Usuarios"
+    
   },
   "roles": {
     "ADMIN": "Administrador",
@@ -172,5 +175,24 @@
       "role": "Rol",
       "status": "Estado"
     }
+  },
+
+      "stockEntries": {
+      "eyebrow": "Compras e inventario",
+      "title": "Entradas de mercadería",
+      "description": "Registra las compras recibidas de proveedores y actualiza automáticamente las existencias.",
+      "new": "Nueva entrada"
+    },
+
+  "suppliers": {
+  "eyebrow": "Compras y abastecimiento",
+  "title": "Proveedores",
+  "description": "Administra los proveedores que abastecen los productos de la tienda.",
+  "new": "Nuevo proveedor",
+  "filters": {
+    "search": "Buscar proveedor",
+    "status": "Estado"
   }
+}
+
 }
