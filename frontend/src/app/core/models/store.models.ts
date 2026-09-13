@@ -232,3 +232,50 @@ export interface StockEntrySearchParams {
   sortBy?: string;
   direction?: 'asc' | 'desc';
 }
+export interface CreateSaleItemRequest {
+  productId: number;
+  quantity: number;
+}
+
+export interface CreateSaleRequest {
+  cashReceived: number;
+  notes: string | null;
+  items: CreateSaleItemRequest[];
+}
+
+export interface SaleItem {
+  id: number;
+  productId: number;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  unitCostSnapshot: number;
+  lineTotal: number;
+}
+
+export interface Sale {
+  id: number;
+  saleNumber: string;
+  soldById: number;
+  soldByEmail: string;
+  saleDate: string;
+  subtotalAmount: number;
+  totalAmount: number;
+  cashReceived: number;
+  changeAmount: number;
+  status: 'COMPLETED' | 'CANCELLED';
+  notes: string | null;
+  items: SaleItem[];
+  createdAt: string;
+}
+
+export interface SaleSearchParams {
+  fromDate?: string;
+  toDate?: string;
+  reference?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  direction?: 'asc' | 'desc';
+}
