@@ -1,0 +1,479 @@
+<div class="page-toolbar">
+  <app-page-heading
+    eyebrowKey="sales.eyebrow"
+    titleKey="sales.title"
+    descriptionKey="sales.description"
+  />
+
+  <div class="page-toolbar">
+  <app-page-heading
+    eyebrowKey="sales.eyebrow"
+    titleKey="sales.title"
+    descriptionKey="sales.description"
+  />
+</div>
+</div>
+
+<app-form-feedback [message]="errorMessage()" />
+<app-form-feedback [message]="successMessage()" tone="success" />
+
+<section class="sale-workspace">
+  <div class="sale-main">
+    <section class="sale-card product-card">
+      <div class="section-heading">
+        <div>
+          <span>Productos</span>
+          <h2>Nueva venta</h2>
+        </div>
+      </div>
+
+      <div
+        class="product-entry"
+        [formGroup]="productForm"
+      >
+        <div class="product-search-field">
+          <label>
+            <span>Buscar producto</span>
+
+            <input
+              type="search"
+              formControlName="search"
+              placeholder="Código o nombre del producto"
+              autocomplete="off"
+            />
+          </label>
+
+          @if (searchingProducts()) {
+            <div class="search-state">
+              <i class="pi pi-spin pi-spinner"></i>
+              Buscando productos...
+            </div>
+          }
+
+          @if (productResults().length > 0) {
+            <div class="search-results">
+              @for (product of productResults(); track product.id) {
+                <button
+                  type="button"
+                  class="search-result"
+                  (click)="selectProduct(product)"
+                >
+                  <div class="search-result-main">
+                    <div class="product-thumb product-thumb--small">
+                      @if (product.imageUrl) {
+                        <img
+                          [src]="product.imageUrl"
+                          [alt]="product.name"
+                        />
+                      } @else {
+                        <i class="pi pi-box"></i>
+                      }
+                    </div>
+
+                    <div>
+                      <strong>{{ product.name }}</strong>
+
+                      <small>
+                        {{ product.code }}
+                        · Stock: {{ product.currentStock }}
+                      </small>
+                    </div>
+                  </div>
+
+                  <span class="search-price">
+                    Q {{ product.salePrice | number: '1.2-2' }}
+                  </span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <label class="quantity-field">
+          <span>Cantidad</span>
+
+          <input
+            type="number"
+            min="0.001"
+            step="0.001"
+            formControlName="quantity"
+          />
+        </label>
+
+        <div class="product-action">
+          <button
+            class="primary-button primary-button--compact"
+            type="button"
+            (click)="addProduct()"
+          >
+            <i class="pi pi-plus"></i>
+            Agregar
+          </button>
+        </div>
+      </div>
+
+      @if (selectedItems().length === 0) {
+        <div class="empty-sale">
+          <div class="empty-sale-icon">
+            <i class="pi pi-shopping-cart"></i>
+          </div>
+
+          <strong>No hay productos agregados</strong>
+
+          <span>
+            Busca un producto y agrégalo a la venta.
+          </span>
+        </div>
+      } @else {
+        <div class="sale-items">
+          <div class="table-scroll">
+            <table class="store-table store-table--sale">
+              <thead>
+                <tr>
+                  <th>Producto</th>
+                  <th>Stock</th>
+                  <th>Cantidad</th>
+                  <th>Precio</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+
+              <tbody>
+                @for (item of selectedItems(); track item.product.id) {
+                  <tr>
+                    <td>
+                      <div class="product-cell">
+                        <div class="product-thumb">
+                          @if (item.product.imageUrl) {
+                            <img
+                              [src]="item.product.imageUrl"
+                              [alt]="item.product.name"
+                            />
+                          } @else {
+                            <i class="pi pi-box"></i>
+                          }
+                        </div>
+
+                        <div>
+                          <strong>{{ item.product.name }}</strong>
+                          <small>{{ item.product.code }}</small>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      {{ item.product.currentStock }}
+                    </td>
+
+                    <td>
+                      <input
+                        class="table-quantity-input"
+                        type="number"
+                        min="0.001"
+                        step="0.001"
+                        [value]="item.quantity"
+                        (change)="updateQuantity(item.product.id, $event)"
+                      />
+                    </td>
+
+                    <td>
+                      Q {{ item.unitPrice | number: '1.2-2' }}
+                    </td>
+
+                    <td>
+                      <strong>
+                        Q {{ item.lineTotal | number: '1.2-2' }}
+                      </strong>
+                    </td>
+
+                    <td>
+                      <button
+                        class="remove-item"
+                        type="button"
+                        title="Quitar producto"
+                        (click)="removeItem(item.product.id)"
+                      >
+                        <i class="pi pi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sale-subtotal">
+            <span>Total de productos</span>
+            <strong>
+              Q {{ totalAmount() | number: '1.2-2' }}
+            </strong>
+          </div>
+        </div>
+      }
+    </section>
+
+    <section class="sale-card history-card">
+      <div class="section-heading">
+        <div>
+          <span>Historial</span>
+          <h2>Ventas registradas</h2>
+        </div>
+      </div>
+
+      <form
+        class="filters-panel filters-panel--sales"
+        [formGroup]="filters"
+      >
+        <label>
+          <span>Número de venta</span>
+
+          <input
+            type="search"
+            formControlName="reference"
+            placeholder="Ej. VTA-ABC123"
+          />
+        </label>
+
+        <label>
+          <span>Desde</span>
+          <input
+            type="date"
+            formControlName="fromDate"
+          />
+        </label>
+
+        <label>
+          <span>Hasta</span>
+          <input
+            type="date"
+            formControlName="toDate"
+          />
+        </label>
+
+        <div class="filter-actions">
+          <button
+            class="secondary-button secondary-button--compact"
+            type="button"
+            (click)="clearFilters()"
+          >
+            Limpiar
+          </button>
+
+          <button
+            class="primary-button primary-button--compact"
+            type="button"
+            (click)="loadSales(0)"
+          >
+            Buscar
+          </button>
+        </div>
+      </form>
+
+      @if (loading()) {
+        <div class="table-state">
+          <i class="pi pi-spin pi-spinner"></i>
+          Cargando ventas...
+        </div>
+      } @else if (sales().length === 0) {
+        <div class="table-state">
+          No se encontraron ventas.
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <table class="store-table">
+            <thead>
+              <tr>
+                <th>Venta</th>
+                <th>Fecha</th>
+                <th>Productos</th>
+                <th>Total</th>
+                <th>Efectivo</th>
+                <th>Cambio</th>
+                <th>Registrado por</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (sale of sales(); track sale.id) {
+                <tr>
+                  <td>
+                    <code>{{ sale.saleNumber }}</code>
+                  </td>
+
+                  <td>
+                    {{
+                      sale.saleDate
+                        | date: 'dd/MM/yyyy HH:mm':'America/Guatemala'
+                    }}
+                  </td>
+
+                  <td>
+                    {{ sale.items.length }}
+                  </td>
+
+                  <td>
+                    <strong>
+                      Q {{ sale.totalAmount | number: '1.2-2' }}
+                    </strong>
+                  </td>
+
+                  <td>
+                    Q {{ sale.cashReceived | number: '1.2-2' }}
+                  </td>
+
+                  <td>
+                    Q {{ sale.changeAmount | number: '1.2-2' }}
+                  </td>
+
+                  <td>
+                    {{ sale.soldByEmail }}
+                  </td>
+
+                  <td>
+                    <span
+                      class="status-pill"
+                      [class.status-completed]="sale.status === 'COMPLETED'"
+                    >
+                      {{
+                        sale.status === 'COMPLETED'
+                          ? 'Completada'
+                          : 'Cancelada'
+                      }}
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="table-footer">
+          <span>
+            Mostrando {{ pageStart() }}-{{ pageEnd() }}
+            de {{ totalElements() }} ventas
+          </span>
+
+          <div class="pagination-actions">
+            <button
+              type="button"
+              [disabled]="page() === 0"
+              (click)="previousPage()"
+            >
+              <i class="pi pi-chevron-left"></i>
+            </button>
+
+            <span>
+              Página {{ page() + 1 }}
+              de {{ totalPages() || 1 }}
+            </span>
+
+            <button
+              type="button"
+              [disabled]="page() + 1 >= totalPages()"
+              (click)="nextPage()"
+            >
+              <i class="pi pi-chevron-right"></i>
+            </button>
+          </div>
+        </footer>
+      }
+    </section>
+  </div>
+
+  <aside class="payment-panel">
+    <div class="cash-badge">
+      <i class="pi pi-money-bill"></i>
+
+      <div>
+        <span>Método de pago</span>
+        <strong>Únicamente efectivo</strong>
+      </div>
+    </div>
+
+    <div class="payment-summary">
+      <span>Total a pagar</span>
+
+      <strong>
+        Q {{ totalAmount() | number: '1.2-2' }}
+      </strong>
+    </div>
+
+    <form
+      class="payment-form"
+      [formGroup]="paymentForm"
+      (ngSubmit)="saveSale()"
+    >
+      <label>
+        <span>Efectivo recibido</span>
+
+        <div class="currency-input currency-input--large">
+          <span>Q</span>
+
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            formControlName="cashReceived"
+            placeholder="0.00"
+          />
+        </div>
+      </label>
+
+      <div
+        class="change-box"
+        [class.change-box--ready]="hasEnoughCash()"
+      >
+        <span>Cambio</span>
+
+        <strong>
+          Q {{ changeAmount() | number: '1.2-2' }}
+        </strong>
+      </div>
+
+      <label>
+        <span>Observaciones</span>
+
+        <textarea
+          rows="3"
+          formControlName="notes"
+          placeholder="Observaciones opcionales"
+        ></textarea>
+      </label>
+
+      @if (
+        selectedItems().length > 0 &&
+        cashReceived() < totalAmount()
+      ) {
+        <div class="payment-warning">
+          <i class="pi pi-exclamation-triangle"></i>
+          El efectivo recibido es insuficiente.
+        </div>
+      }
+
+      <button
+        class="primary-button confirm-sale-button"
+        type="submit"
+        [disabled]="saving() || !hasEnoughCash()"
+      >
+        <i class="pi pi-check-circle"></i>
+
+        {{
+          saving()
+            ? 'Registrando venta...'
+            : 'Confirmar venta'
+        }}
+      </button>
+
+      <button
+        class="secondary-button cancel-sale-button"
+        type="button"
+        [disabled]="saving()"
+        (click)="resetSale()"
+      >
+        Cancelar venta
+      </button>
+    </form>
+  </aside>
+</section>

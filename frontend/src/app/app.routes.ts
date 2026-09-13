@@ -73,6 +73,16 @@ export const routes: Routes = [
           ),
       },
 
+            {
+        path: 'sales',
+        loadComponent: () =>
+          import('./pages/protected/sales/sales').then(
+            (module) => module.SalesPageComponent,
+          ),
+        canActivate: [roleGuard],
+        data: { roles: ['ADMIN', 'EMPLOYEE'] },
+      },
+
       {
           path: 'suppliers',
           loadComponent: () =>

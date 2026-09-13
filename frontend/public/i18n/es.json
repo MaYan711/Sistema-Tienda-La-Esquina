@@ -26,6 +26,7 @@
     "secureSession": "Sesión protegida",
     "main": "Navegación principal",
     "products": "Productos",
+    "sales": "Ventas",
     "suppliers": "Proveedores",
     "stockEntries": "Entradas",
     "alerts": "Alertas",
@@ -182,6 +183,12 @@
       "title": "Entradas de mercadería",
       "description": "Registra las compras recibidas de proveedores y actualiza automáticamente las existencias.",
       "new": "Nueva entrada"
+    },
+
+    "sales": {
+      "eyebrow": "Ventas y caja",
+      "title": "Ventas en efectivo",
+      "description": "Registra las ventas de la tienda, descuenta existencias y calcula el cambio automáticamente."
     },
 
   "suppliers": {
