@@ -1,0 +1,520 @@
+:host {
+  display: block;
+}
+
+.reports-page {
+  display: grid;
+  gap: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+.reports-header {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.reports-header > div:first-child {
+  max-width: 720px;
+}
+
+.reports-eyebrow,
+.panel-eyebrow {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #8c7041;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.reports-header h1 {
+  margin: 0;
+  color: #123f34;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1;
+}
+
+.reports-header p {
+  max-width: 680px;
+  margin: 0.8rem 0 0;
+  color: #6e746f;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.date-card {
+  min-width: 235px;
+  border-radius: 20px;
+  padding: 1.25rem 1.4rem;
+  background:
+    linear-gradient(
+      135deg,
+      #f6ca47,
+      #f3b92c
+    );
+  box-shadow:
+    0 14px 35px
+    rgba(116, 87, 20, 0.14);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.date-card span {
+  color: #725511;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.date-card strong {
+  margin-top: 0.35rem;
+  color: #173d32;
+  text-transform: capitalize;
+  font-size: 0.95rem;
+}
+
+.date-card small {
+  margin-top: 0.35rem;
+  color: rgba(23, 61, 50, 0.7);
+}
+
+.message {
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.message--error {
+  border: 1px solid #efc3c3;
+  background: #fff0f0;
+  color: #9a2929;
+}
+
+.report-filters {
+  display: grid;
+  grid-template-columns:
+    minmax(155px, 0.8fr)
+    minmax(155px, 0.8fr)
+    minmax(220px, 1.25fr)
+    auto;
+  gap: 1rem;
+  align-items: end;
+  border: 1px solid #e7dfcf;
+  border-radius: 18px;
+  padding: 1.2rem;
+  background: #fffdf7;
+  box-shadow:
+    0 10px 30px
+    rgba(42, 51, 46, 0.05);
+}
+
+.report-filters label,
+.export-actions label {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.report-filters label > span,
+.export-actions label > span {
+  color: #6a706b;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.report-filters input,
+.report-filters select,
+.export-actions select {
+  width: 100%;
+  min-height: 45px;
+  border: 1px solid #d9d5c9;
+  border-radius: 10px;
+  padding: 0 0.85rem;
+  outline: none;
+  background: #fff;
+  color: #27342f;
+  font: inherit;
+}
+
+.report-filters input:focus,
+.report-filters select:focus,
+.export-actions select:focus {
+  border-color: #1b6754;
+  box-shadow:
+    0 0 0 3px
+    rgba(27, 103, 84, 0.1);
+}
+
+.generate-button,
+.pdf-button,
+.excel-button {
+  min-height: 45px;
+  border: 0;
+  border-radius: 11px;
+  padding: 0 1.1rem;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.generate-button {
+  background: #f4c542;
+  color: #183e33;
+}
+
+.generate-button:hover:not(:disabled),
+.pdf-button:hover:not(:disabled),
+.excel-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.loading-panel {
+  min-height: 250px;
+  border: 1px dashed #d8d0bf;
+  border-radius: 18px;
+  background: #fffdf8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  color: #68716c;
+}
+
+.loading-panel i {
+  color: #1a654f;
+  font-size: 1.8rem;
+}
+
+.period-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #667069;
+  font-size: 0.88rem;
+}
+
+.period-summary i {
+  color: #bc8e17;
+}
+
+.period-summary strong {
+  color: #173f34;
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  min-height: 165px;
+  border: 1px solid #e4ded0;
+  border-radius: 18px;
+  padding: 1.15rem;
+  background: #fffdf8;
+  box-shadow:
+    0 12px 26px
+    rgba(34, 50, 43, 0.05);
+}
+
+.metric-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.15rem;
+}
+
+.metric-icon,
+.panel-icon,
+.export-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #eef5f1;
+  color: #17634f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-icon {
+  background: #fff3c6;
+  color: #a57500;
+}
+
+.metric-change {
+  color: #868b87;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.metric-change.positive {
+  color: #16845f;
+}
+
+.metric-change.negative {
+  color: #c14a4a;
+}
+
+.metric-label {
+  display: block;
+  color: #69736c;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.metric-value {
+  display: block;
+  margin-top: 0.3rem;
+  color: #173f34;
+  font-size: 1.75rem;
+}
+
+.metric-card small {
+  display: block;
+  margin-top: 0.45rem;
+  color: #969b97;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.2fr)
+    minmax(0, 0.8fr);
+  gap: 1rem;
+}
+
+.report-panel {
+  border: 1px solid #e4ded0;
+  border-radius: 20px;
+  padding: 1.25rem;
+  background: #fffdf8;
+  box-shadow:
+    0 12px 30px
+    rgba(34, 50, 43, 0.05);
+}
+
+.panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-header h2 {
+  margin: 0;
+  color: #153f33;
+  font-size: 1.15rem;
+}
+
+.panel-header p {
+  margin: 0.35rem 0 0;
+  color: #8a908c;
+  font-size: 0.82rem;
+}
+
+.chart-container {
+  position: relative;
+  min-height: 330px;
+}
+
+.categories-panel {
+  overflow: hidden;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.9rem 0.85rem;
+  text-align: left;
+}
+
+thead th {
+  border-bottom: 1px solid #ded8ca;
+  color: #7c817d;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+tbody td {
+  border-bottom: 1px solid #eee9de;
+  color: #555f59;
+  font-size: 0.86rem;
+}
+
+tbody tr:hover {
+  background: #fbf8ef;
+}
+
+tbody strong {
+  color: #183f34;
+}
+
+tfoot td {
+  border-top: 2px solid #ded8ca;
+  background: #f7f3e8;
+  color: #183f34;
+}
+
+.percentage-pill {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.3rem 0.65rem;
+  background: #edf6f1;
+  color: #17634f;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.export-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  border: 1px solid #d8cfae;
+  border-radius: 20px;
+  padding: 1.25rem;
+  background:
+    linear-gradient(
+      135deg,
+      #fffaf0,
+      #fff5d9
+    );
+}
+
+.export-panel__content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.export-panel h2 {
+  margin: 0;
+  color: #173f34;
+  font-size: 1.1rem;
+}
+
+.export-panel p {
+  margin: 0.35rem 0 0;
+  color: #787e79;
+  font-size: 0.82rem;
+}
+
+.export-actions {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1fr)
+    auto
+    auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.current-export {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.current-export span {
+  color: #6a706b;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.current-export strong {
+  color: #173f34;
+  font-size: 0.9rem;
+}
+
+.pdf-button {
+  background: #9d3b3b;
+  color: #fff;
+}
+
+.excel-button {
+  background: #18764f;
+  color: #fff;
+}
+
+@media (max-width: 1180px) {
+  .metrics-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-filters {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .generate-button {
+    width: 100%;
+  }
+
+  .export-panel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .export-actions {
+    grid-template-columns:
+      1fr auto auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .reports-header {
+    flex-direction: column;
+  }
+
+  .date-card {
+    min-width: 0;
+  }
+
+  .report-filters,
+  .metrics-grid,
+  .export-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-button,
+  .excel-button {
+    width: 100%;
+  }
+}
