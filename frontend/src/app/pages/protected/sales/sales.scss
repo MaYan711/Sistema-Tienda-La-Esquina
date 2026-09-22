@@ -1,5 +1,8 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .page-toolbar {
@@ -7,7 +10,15 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-bottom: 1.5rem;
+}
+
+.page-toolbar app-page-heading {
+  min-width: 0;
+  flex: 1;
 }
 
 .sale-workspace {
@@ -15,16 +26,25 @@
   grid-template-columns: minmax(0, 1fr) 340px;
   gap: 1.5rem;
   align-items: start;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .sale-main {
   display: grid;
   gap: 1.5rem;
+  width: 100%;
   min-width: 0;
+  max-width: 100%;
 }
 
 .sale-card,
 .payment-panel {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--color-border, #dfe5dc);
   border-radius: 18px;
   background: var(--color-surface, #ffffff);
@@ -33,6 +53,12 @@
 
 .sale-card {
   padding: 1.25rem;
+}
+
+.history-card {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .section-heading {
@@ -64,10 +90,15 @@
   grid-template-columns: minmax(0, 1fr) 130px auto;
   gap: 1rem;
   align-items: end;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .product-search-field {
   position: relative;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .product-search-field label,
@@ -75,6 +106,7 @@
 .payment-form label,
 .filters-panel label {
   display: grid;
+  min-width: 0;
   gap: 0.45rem;
 
   > span {
@@ -87,6 +119,8 @@
 input,
 textarea {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
   border: 1px solid #d8dfd8;
   border-radius: 10px;
@@ -121,6 +155,8 @@ textarea:focus {
   top: calc(100% + 0.35rem);
   left: 0;
   right: 0;
+  width: 100%;
+  max-width: 100%;
   overflow: hidden;
   border: 1px solid #dce4db;
   border-radius: 12px;
@@ -131,10 +167,12 @@ textarea:focus {
 .search-result {
   display: flex;
   width: 100%;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem;
+  box-sizing: border-box;
   border: 0;
   border-bottom: 1px solid #edf0ec;
   background: transparent;
@@ -155,6 +193,12 @@ textarea:focus {
     display: block;
   }
 
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   small {
     margin-top: 0.2rem;
     color: #758078;
@@ -165,6 +209,11 @@ textarea:focus {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.search-result-main > div:last-child {
   min-width: 0;
 }
 
@@ -180,6 +229,8 @@ textarea:focus {
   top: calc(100% + 0.35rem);
   left: 0;
   right: 0;
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.75rem;
   border: 1px solid #dce4db;
   border-radius: 12px;
@@ -189,11 +240,16 @@ textarea:focus {
 }
 
 .product-action {
+  min-width: 0;
   padding-bottom: 1px;
 }
 
 .empty-sale {
   display: grid;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   justify-items: center;
   gap: 0.35rem;
   margin-top: 1.25rem;
@@ -222,15 +278,24 @@ textarea:focus {
 }
 
 .sale-items {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-top: 1.25rem;
 }
 
 .table-scroll {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .store-table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
 
   th,
@@ -256,10 +321,15 @@ textarea:focus {
   }
 }
 
+.store-table--sale {
+  min-width: 680px;
+}
+
 .product-cell {
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  min-width: 0;
 
   strong,
   small {
@@ -387,25 +457,31 @@ textarea:focus {
 
 .payment-form {
   display: grid;
+  min-width: 0;
   gap: 1rem;
   padding: 1.15rem;
 }
 
 .currency-input {
   display: flex;
+  width: 100%;
+  min-width: 0;
   align-items: center;
   overflow: hidden;
+  box-sizing: border-box;
   border: 1px solid #d8dfd8;
   border-radius: 10px;
   background: #ffffff;
 
   > span {
+    flex: none;
     padding-left: 0.8rem;
     color: #5d6c60;
     font-weight: 700;
   }
 
   input {
+    min-width: 0;
     border: 0;
     box-shadow: none;
   }
@@ -463,6 +539,8 @@ textarea:focus {
 .confirm-sale-button,
 .cancel-sale-button {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   justify-content: center;
 }
 
@@ -471,11 +549,15 @@ textarea:focus {
   grid-template-columns: minmax(180px, 1fr) 160px 160px auto;
   gap: 0.8rem;
   align-items: end;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   margin-bottom: 1rem;
 }
 
 .filter-actions {
   display: flex;
+  min-width: 0;
   gap: 0.5rem;
 }
 
@@ -509,6 +591,7 @@ textarea:focus {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  min-width: 0;
   padding-top: 1rem;
   color: #69746c;
   font-size: 0.82rem;
@@ -523,6 +606,7 @@ textarea:focus {
     display: grid;
     width: 34px;
     height: 34px;
+    flex: none;
     place-items: center;
     border: 1px solid #dce2da;
     border-radius: 8px;
@@ -538,18 +622,19 @@ textarea:focus {
 
 @media (max-width: 1100px) {
   .sale-workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .payment-panel {
     position: static;
+    width: 100%;
   }
 }
 
 @media (max-width: 850px) {
   .product-entry,
   .filters-panel--sales {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .product-action,
@@ -557,9 +642,14 @@ textarea:focus {
     width: 100%;
   }
 
-  .product-action button,
+  .product-action button {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .filter-actions button {
     flex: 1;
+    min-width: 0;
   }
 }
 
@@ -570,11 +660,100 @@ textarea:focus {
     flex-direction: column;
   }
 
+  .sale-workspace,
+  .sale-main,
+  .sale-card,
+  .payment-panel,
+  .product-entry,
+  .filters-panel--sales {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .sale-card {
     padding: 1rem;
   }
 
+  .section-heading {
+    align-items: flex-start;
+  }
+
+  .product-action button {
+    min-height: 48px;
+  }
+
+  .search-result {
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+
+  .search-price {
+    font-size: 0.82rem;
+  }
+
+  .empty-sale {
+    padding: 2rem 0.75rem;
+  }
+
+  .sale-subtotal {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
   .payment-summary strong {
     font-size: 1.65rem;
+  }
+
+  .filter-actions {
+    flex-direction: column;
+  }
+
+  .filter-actions button {
+    width: 100%;
+  }
+
+  .table-footer {
+    gap: 0.75rem;
+  }
+
+  .pagination-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 420px) {
+  .sale-card {
+    padding: 0.9rem;
+    border-radius: 15px;
+  }
+
+  .payment-form {
+    padding: 1rem;
+  }
+
+  .cash-badge {
+    padding: 0.9rem 1rem;
+  }
+
+  .payment-summary {
+    padding: 1.2rem 1rem;
+  }
+
+  .change-box {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .search-result-main {
+    gap: 0.55rem;
+  }
+
+  .product-thumb--small {
+    width: 32px;
+    height: 32px;
   }
 }

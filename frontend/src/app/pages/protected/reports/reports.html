@@ -1,0 +1,540 @@
+<section class="reports-page">
+
+  <header class="reports-header">
+    <div>
+      <span class="reports-eyebrow">
+        ANÁLISIS Y DECISIONES
+      </span>
+
+      <h1>Reportes</h1>
+
+      <p>
+        Analiza el desempeño de tu tienda con información
+        actualizada y reportes detallados para apoyar la
+        toma de decisiones.
+      </p>
+    </div>
+
+    <div class="date-card">
+      <span>HOY</span>
+      <strong>{{ todayLabel() }}</strong>
+      <small>Tienda La Esquina</small>
+    </div>
+  </header>
+
+  @if (errorMessage()) {
+    <div class="message message--error">
+      <i class="pi pi-exclamation-circle"></i>
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <form
+    class="report-filters"
+    [formGroup]="filters"
+    (ngSubmit)="generateReport()"
+  >
+    <label>
+      <span>Fecha inicial</span>
+      <input
+        type="date"
+        formControlName="fromDate"
+      />
+    </label>
+
+    <label>
+      <span>Fecha final</span>
+      <input
+        type="date"
+        formControlName="toDate"
+      />
+    </label>
+
+    <label class="report-type-field">
+      <span>Tipo de reporte</span>
+
+      <select formControlName="reportType">
+        @for (
+          option of reportOptions;
+          track option.value
+        ) {
+          <option [value]="option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <button
+      class="generate-button"
+      type="submit"
+      [disabled]="loading()"
+    >
+      @if (loading()) {
+        <i class="pi pi-spin pi-spinner"></i>
+        Generando...
+      } @else {
+        <i class="pi pi-chart-line"></i>
+        Generar reporte
+      }
+    </button>
+  </form>
+
+  @if (loading() && !data()) {
+    <section class="loading-panel">
+      <i class="pi pi-spin pi-spinner"></i>
+      <strong>Generando información...</strong>
+      <span>
+        Estamos consultando los datos de tu tienda.
+      </span>
+    </section>
+  }
+
+  @if (data(); as report) {
+
+    <section class="period-summary">
+      <i class="pi pi-calendar"></i>
+
+      <span>
+        Período analizado:
+        <strong>
+          {{ formatDate(generatedFrom()) }}
+          -
+          {{ formatDate(generatedTo()) }}
+        </strong>
+      </span>
+    </section>
+
+    <section class="metrics-grid">
+
+      @if (show('sales')) {
+        <article class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon">
+              <i class="pi pi-wallet"></i>
+            </span>
+
+            <span
+              class="metric-change"
+              [class.positive]="
+                percentageClass(
+                  report.sales.changePercentage
+                ) === 'positive'
+              "
+              [class.negative]="
+                percentageClass(
+                  report.sales.changePercentage
+                ) === 'negative'
+              "
+            >
+              {{
+                percentage(
+                  report.sales.changePercentage
+                )
+              }}
+            </span>
+          </div>
+
+          <span class="metric-label">
+            Ventas del período
+          </span>
+
+          <strong class="metric-value">
+            {{ money(report.sales.totalSales) }}
+          </strong>
+
+          <small>
+            {{ report.sales.salesCount }}
+            ventas registradas
+          </small>
+        </article>
+      }
+
+      @if (show('margin')) {
+        <article class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon">
+              <i class="pi pi-chart-line"></i>
+            </span>
+
+            <span
+              class="metric-change"
+              [class.positive]="
+                percentageClass(
+                  report.margin.changePercentage
+                ) === 'positive'
+              "
+              [class.negative]="
+                percentageClass(
+                  report.margin.changePercentage
+                ) === 'negative'
+              "
+            >
+              {{
+                percentage(
+                  report.margin.changePercentage
+                )
+              }}
+            </span>
+          </div>
+
+          <span class="metric-label">
+            Margen estimado
+          </span>
+
+          <strong class="metric-value">
+            {{
+              money(
+                report.margin.estimatedMargin
+              )
+            }}
+          </strong>
+
+          <small>
+            Ganancia estimada del período
+          </small>
+        </article>
+      }
+
+      @if (show('products-sold')) {
+        <article class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon">
+              <i class="pi pi-shopping-bag"></i>
+            </span>
+
+            <span
+              class="metric-change"
+              [class.positive]="
+                percentageClass(
+                  report.productsSold.changePercentage
+                ) === 'positive'
+              "
+              [class.negative]="
+                percentageClass(
+                  report.productsSold.changePercentage
+                ) === 'negative'
+              "
+            >
+              {{
+                percentage(
+                  report.productsSold.changePercentage
+                )
+              }}
+            </span>
+          </div>
+
+          <span class="metric-label">
+            Productos vendidos
+          </span>
+
+          <strong class="metric-value">
+            {{
+              number(
+                report.productsSold.productsSold
+              )
+            }}
+          </strong>
+
+          <small>
+            Unidades vendidas en el período
+          </small>
+        </article>
+      }
+
+      @if (show('resolved-alerts')) {
+        <article class="metric-card">
+          <div class="metric-card__top">
+            <span class="metric-icon">
+              <i class="pi pi-bell"></i>
+            </span>
+
+            <span
+              class="metric-change"
+              [class.positive]="
+                percentageClass(
+                  report.resolvedAlerts
+                    .changePercentage
+                ) === 'positive'
+              "
+              [class.negative]="
+                percentageClass(
+                  report.resolvedAlerts
+                    .changePercentage
+                ) === 'negative'
+              "
+            >
+              {{
+                percentage(
+                  report.resolvedAlerts
+                    .changePercentage
+                )
+              }}
+            </span>
+          </div>
+
+          <span class="metric-label">
+            Alertas resueltas
+          </span>
+
+          <strong class="metric-value">
+            {{
+              report.resolvedAlerts
+                .resolvedAlerts
+            }}
+          </strong>
+
+          <small>
+            Alertas de inventario atendidas
+          </small>
+        </article>
+      }
+
+    </section>
+
+    <section class="charts-grid">
+
+      @if (show('daily-sales')) {
+        <article class="report-panel">
+          <header class="panel-header">
+            <div>
+              <span class="panel-eyebrow">
+                TENDENCIA
+              </span>
+
+              <h2>Ventas por día</h2>
+
+              <p>
+                Comportamiento diario de las ventas.
+              </p>
+            </div>
+
+            <span class="panel-icon">
+              <i class="pi pi-chart-line"></i>
+            </span>
+          </header>
+
+          <div class="chart-container">
+            <canvas #dailySalesCanvas></canvas>
+          </div>
+        </article>
+      }
+
+      @if (show('top-products')) {
+        <article class="report-panel">
+          <header class="panel-header">
+            <div>
+              <span class="panel-eyebrow">
+                RENDIMIENTO
+              </span>
+
+              <h2>
+                Productos más vendidos
+              </h2>
+
+              <p>
+                Ranking por cantidad vendida.
+              </p>
+            </div>
+
+            <span class="panel-icon">
+              <i class="pi pi-chart-bar"></i>
+            </span>
+          </header>
+
+          <div class="chart-container">
+            <canvas #topProductsCanvas></canvas>
+          </div>
+        </article>
+      }
+
+    </section>
+
+    @if (show('categories')) {
+      <section class="report-panel categories-panel">
+
+        <header class="panel-header">
+          <div>
+            <span class="panel-eyebrow">
+              DISTRIBUCIÓN
+            </span>
+
+            <h2>Resumen por categoría</h2>
+
+            <p>
+              Comparación de ventas y margen por
+              categoría.
+            </p>
+          </div>
+
+          <span class="panel-icon">
+            <i class="pi pi-table"></i>
+          </span>
+        </header>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th>Productos vendidos</th>
+                <th>Total en ventas</th>
+                <th>Margen estimado</th>
+                <th>% del total</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (
+                category of report.categories.categories;
+                track category.categoryId
+              ) {
+                <tr>
+                  <td>
+                    <strong>
+                      {{ category.categoryName }}
+                    </strong>
+                  </td>
+
+                  <td>
+                    {{
+                      number(
+                        category.productsSold
+                      )
+                    }}
+                  </td>
+
+                  <td>
+                    {{
+                      money(
+                        category.totalSales
+                      )
+                    }}
+                  </td>
+
+                  <td>
+                    {{
+                      money(
+                        category.estimatedMargin
+                      )
+                    }}
+                  </td>
+
+                  <td>
+                    <span class="percentage-pill">
+                      {{
+                        number(
+                          category.percentageOfSales
+                        )
+                      }}%
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+
+            <tfoot>
+              <tr>
+                <td>
+                  <strong>Total</strong>
+                </td>
+
+                <td>
+                  <strong>
+                    {{
+                      number(
+                        report.productsSold
+                          .productsSold
+                      )
+                    }}
+                  </strong>
+                </td>
+
+                <td>
+                  <strong>
+                    {{
+                      money(
+                        report.sales.totalSales
+                      )
+                    }}
+                  </strong>
+                </td>
+
+                <td>
+                  <strong>
+                    {{
+                      money(
+                        report.margin
+                          .estimatedMargin
+                      )
+                    }}
+                  </strong>
+                </td>
+
+                <td>
+                  <strong>100.00%</strong>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </section>
+    }
+
+    <section class="export-panel">
+
+      <div class="export-panel__content">
+        <span class="export-icon">
+          <i class="pi pi-download"></i>
+        </span>
+
+        <div>
+          <span class="panel-eyebrow">
+            EXPORTACIONES
+          </span>
+
+          <h2>Descargar reportes</h2>
+
+          <p>
+            Genera documentos profesionales con la
+            información del período seleccionado.
+          </p>
+        </div>
+      </div>
+
+      <form
+  class="export-actions"
+  [formGroup]="exportForm"
+>
+  <div class="current-export">
+    <span>Reporte a descargar</span>
+    <strong>{{ currentExportLabel() }}</strong>
+  </div>
+
+  <button
+    class="pdf-button"
+    type="button"
+    [disabled]="exporting()"
+    (click)="exportPdf()"
+  >
+    <i class="pi pi-file-pdf"></i>
+    PDF
+  </button>
+
+  <button
+    class="excel-button"
+    type="button"
+    [disabled]="exporting()"
+    (click)="exportExcel()"
+  >
+    <i class="pi pi-file-excel"></i>
+    Excel
+  </button>
+</form>
+
+    </section>
+
+  }
+
+</section>
