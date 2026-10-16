@@ -22,7 +22,11 @@
     <div class="operating-hours-banner__content">
       <span class="operating-hours-banner__eyebrow">CONTROL DE HORARIO</span>
       <strong>Horario de ventas para empleados</strong>
-      <span>{{ hours.openingTime }} - {{ hours.closingTime }} · Hora de Guatemala</span>
+      @if (hours.closedToday) {
+        <span>Cerrado hoy · Hora de Guatemala</span>
+      } @else {
+        <span>{{ hours.openingTime }} - {{ hours.closingTime }} · Hora de Guatemala</span>
+      }
       <small>{{ hours.message }}</small>
     </div>
 
@@ -39,6 +43,8 @@
         Administrador sin restricción
       } @else if (hours.operationAllowed) {
         Turno habilitado
+      } @else if (hours.closedToday) {
+        Cerrado hoy
       } @else {
         Fuera de horario
       }
