@@ -6,15 +6,12 @@ import com.tiendalaesquina.domain.model.InventoryMovement;
 import com.tiendalaesquina.domain.model.InventoryMovementType;
 import com.tiendalaesquina.domain.model.InventorySourceType;
 import com.tiendalaesquina.domain.model.Product;
-import com.tiendalaesquina.domain.model.StockNotification;
-import com.tiendalaesquina.domain.model.StockNotificationType;
 import com.tiendalaesquina.domain.model.StockStatus;
 import com.tiendalaesquina.domain.model.UserAccount;
 import com.tiendalaesquina.domain.repository.AuditEventRepository;
 import com.tiendalaesquina.domain.repository.InventoryAdjustmentRepository;
 import com.tiendalaesquina.domain.repository.InventoryMovementRepository;
 import com.tiendalaesquina.domain.repository.ProductRepository;
-import com.tiendalaesquina.domain.repository.StockNotificationRepository;
 import com.tiendalaesquina.domain.repository.UserAccountRepository;
 import com.tiendalaesquina.exception.ApiException;
 import com.tiendalaesquina.web.dto.InventoryAdjustmentRequest;
@@ -39,20 +36,20 @@ public class InventoryService {
     private final UserAccountRepository users;
     private final InventoryAdjustmentRepository adjustments;
     private final InventoryMovementRepository movements;
-    private final StockNotificationRepository notifications;
+    private final StockNotificationService stockNotifications;
     private final AuditEventRepository auditEvents;
 
     public InventoryService(ProductRepository products,
                             UserAccountRepository users,
                             InventoryAdjustmentRepository adjustments,
                             InventoryMovementRepository movements,
-                            StockNotificationRepository notifications,
+                            StockNotificationService stockNotifications,
                             AuditEventRepository auditEvents) {
         this.products = products;
         this.users = users;
         this.adjustments = adjustments;
         this.movements = movements;
-        this.notifications = notifications;
+        this.stockNotifications = stockNotifications;
         this.auditEvents = auditEvents;
     }
 
@@ -148,8 +145,8 @@ public class InventoryService {
         );
         movements.save(movement);
 
-        // 4. Evaluar alertas/notificaciones (sin resolver automáticamente)
-        handleStockAlerts(product, newStock);
+        // 4. Evaluar transición de inventario y notificar por correo si corresponde
+        stockNotifications.handleStockStatusChange(product, quantityBefore, newStock);
 
         // 5. Registrar evento de auditoría
         String summary = String.format(
@@ -200,32 +197,6 @@ public class InventoryService {
                 adjustment.getCreatedAt(),
                 product.getStockStatus().name()
         );
-    }
-
-    private void handleStockAlerts(Product product, BigDecimal currentStock) {
-        StockStatus status = StockStatus.from(currentStock, product.getMinimumStock());
-        if (status == StockStatus.OUT_OF_STOCK) {
-            if (!notifications.existsByProductIdAndNotificationTypeAndIsReadFalse(
-                    product.getId(), StockNotificationType.OUT_OF_STOCK)) {
-                notifications.save(new StockNotification(
-                        product,
-                        StockNotificationType.OUT_OF_STOCK,
-                        "Producto agotado",
-                        "El producto " + product.getName() + " se encuentra agotado."
-                ));
-            }
-        } else if (status == StockStatus.LOW_STOCK) {
-            if (!notifications.existsByProductIdAndNotificationTypeAndIsReadFalse(
-                    product.getId(), StockNotificationType.LOW_STOCK)) {
-                notifications.save(new StockNotification(
-                        product,
-                        StockNotificationType.LOW_STOCK,
-                        "Existencia baja",
-                        "El producto " + product.getName() + " tiene " + currentStock
-                                + " unidades y su mínimo es " + product.getMinimumStock() + "."
-                ));
-            }
-        }
     }
 
     @Transactional(readOnly = true)

@@ -28,6 +28,7 @@ export class SuppliersPageComponent implements OnInit {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly modalErrorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
 
   readonly page = signal(0);
@@ -138,6 +139,7 @@ export class SuppliersPageComponent implements OnInit {
 
   openCreate(): void {
     this.selectedSupplier.set(null);
+    this.modalErrorMessage.set(null);
 
     this.supplierForm.reset({
       name: '',
@@ -152,6 +154,7 @@ export class SuppliersPageComponent implements OnInit {
 
   openEdit(supplier: Supplier): void {
     this.selectedSupplier.set(supplier);
+    this.modalErrorMessage.set(null);
 
     this.supplierForm.reset({
       name: supplier.name,
@@ -167,6 +170,7 @@ export class SuppliersPageComponent implements OnInit {
   closeModal(): void {
     this.supplierModalOpen.set(false);
     this.selectedSupplier.set(null);
+    this.modalErrorMessage.set(null);
   }
 
   saveSupplier(): void {
@@ -187,7 +191,7 @@ export class SuppliersPageComponent implements OnInit {
     };
 
     this.saving.set(true);
-    this.errorMessage.set(null);
+    this.modalErrorMessage.set(null);
 
     const request$ = current
       ? this.suppliersApi.update(current.id, request)
@@ -207,7 +211,7 @@ export class SuppliersPageComponent implements OnInit {
           this.loadSuppliers();
         },
         error: (error: unknown) => {
-          this.errorMessage.set(this.errors.getMessage(error));
+          this.modalErrorMessage.set(this.errors.getMessage(error));
         },
       });
   }

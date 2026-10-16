@@ -1,7 +1,11 @@
 package com.tiendalaesquina.web.sale;
 
 import com.tiendalaesquina.application.sale.SaleService;
+import com.tiendalaesquina.application.schedule.EmployeeOperatingHoursService;
 import com.tiendalaesquina.web.dto.CreateSaleRequest;
+import com.tiendalaesquina.web.dto.OperatingHoursResponse;
+import com.tiendalaesquina.web.dto.SaleDetailResponse;
+import com.tiendalaesquina.web.dto.SaleReceiptResponse;
 import com.tiendalaesquina.web.dto.SaleResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -45,9 +49,25 @@ public class SaleController {
     );
 
     private final SaleService sales;
+    private final EmployeeOperatingHoursService operatingHours;
 
-    public SaleController(SaleService sales) {
+    public SaleController(
+            SaleService sales,
+            EmployeeOperatingHoursService operatingHours
+    ) {
         this.sales = sales;
+        this.operatingHours = operatingHours;
+    }
+
+
+    @GetMapping("/operating-hours")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @Operation(
+            summary = "Consultar horario operativo de ventas",
+            description = "Indica el horario autorizado para empleados y si el usuario actual puede registrar una venta en este momento"
+    )
+    public OperatingHoursResponse operatingHours(Authentication authentication) {
+        return operatingHours.getStatus(authentication.getName());
     }
 
     @PostMapping
@@ -107,5 +127,25 @@ public class SaleController {
     @Operation(summary = "Consultar una venta")
     public SaleResponse get(@PathVariable Long id) {
         return sales.get(id);
+    }
+
+    @GetMapping("/{id}/detail")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @Operation(
+            summary = "Consultar el detalle completo de una venta",
+            description = "Devuelve los productos vendidos, cantidades, precios, totales, pago, cambio, usuario y observaciones de la venta"
+    )
+    public SaleDetailResponse detail(@PathVariable Long id) {
+        return sales.getDetail(id);
+    }
+
+    @GetMapping("/{id}/receipt")
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+    @Operation(
+            summary = "Obtener comprobante de una venta",
+            description = "Devuelve los datos necesarios para mostrar, imprimir o descargar el comprobante de compra"
+    )
+    public SaleReceiptResponse receipt(@PathVariable Long id) {
+        return sales.getReceipt(id);
     }
 }

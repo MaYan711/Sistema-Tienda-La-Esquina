@@ -1,5 +1,6 @@
 package com.tiendalaesquina.application.product;
 
+import com.tiendalaesquina.application.inventory.StockNotificationService;
 import com.tiendalaesquina.domain.model.MeasurementUnit;
 import com.tiendalaesquina.domain.model.Product;
 import com.tiendalaesquina.domain.model.ProductCategory;
@@ -32,15 +33,18 @@ public class ProductService {
     private final ProductCategoryRepository categories;
     private final MeasurementUnitRepository units;
     private final UserAccountRepository users;
+    private final StockNotificationService stockNotifications;
 
     public ProductService(ProductRepository products,
                           ProductCategoryRepository categories,
                           MeasurementUnitRepository units,
-                          UserAccountRepository users) {
+                          UserAccountRepository users,
+                          StockNotificationService stockNotifications) {
         this.products = products;
         this.categories = categories;
         this.units = units;
         this.users = users;
+        this.stockNotifications = stockNotifications;
     }
 
     @Transactional(readOnly = true)
@@ -132,7 +136,9 @@ public class ProductService {
                 actor
         );
 
-        return toResponse(products.save(product));
+        product = products.save(product);
+        stockNotifications.handleInitialStockState(product);
+        return toResponse(product);
     }
 
     @Transactional
@@ -148,6 +154,7 @@ public class ProductService {
         ProductCategory category = requireActiveCategory(request.categoryId());
         MeasurementUnit unit = requireActiveUnit(request.unitId());
         UserAccount actor = requireActor(actorEmail);
+        StockStatus previousStatus = product.getStockStatus();
 
         product.updateCatalogData(
                 code,
@@ -162,7 +169,9 @@ public class ProductService {
                 actor
         );
 
-        return toResponse(products.save(product));
+        product = products.save(product);
+        stockNotifications.handleProductConfigurationChange(product, previousStatus);
+        return toResponse(product);
     }
 
     @Transactional

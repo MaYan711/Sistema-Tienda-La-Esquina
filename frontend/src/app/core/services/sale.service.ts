@@ -5,8 +5,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   CreateSaleRequest,
+  OperatingHoursStatus,
   PageResponse,
   Sale,
+  SaleDetail,
+  SaleReceipt,
   SaleSearchParams,
 } from '../models/store.models';
 
@@ -50,8 +53,22 @@ export class SaleService {
     });
   }
 
+  getOperatingHours(): Observable<OperatingHoursStatus> {
+    return this.http.get<OperatingHoursStatus>(
+      `${this.url}/operating-hours`,
+    );
+  }
+
   getById(id: number): Observable<Sale> {
     return this.http.get<Sale>(`${this.url}/${id}`);
+  }
+
+  getDetail(id: number): Observable<SaleDetail> {
+    return this.http.get<SaleDetail>(`${this.url}/${id}/detail`);
+  }
+
+  getReceipt(id: number): Observable<SaleReceipt> {
+    return this.http.get<SaleReceipt>(`${this.url}/${id}/receipt`);
   }
 
   create(request: CreateSaleRequest): Observable<Sale> {

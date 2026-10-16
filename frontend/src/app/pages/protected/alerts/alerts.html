@@ -29,6 +29,15 @@
       <small>Notificaciones atendidas</small>
     </div>
   </article>
+
+  <article class="summary-card summary-card--mail">
+    <span class="summary-card__icon"><i class="pi pi-envelope"></i></span>
+    <div class="summary-card__content">
+      <span class="summary-card__label">Avisos por correo</span>
+      <strong>Activos</strong>
+      <small>Se envían a administradores verificados</small>
+    </div>
+  </article>
 </section>
 
 <form class="alerts-filters" [formGroup]="filters" (ngSubmit)="applyFilters()">

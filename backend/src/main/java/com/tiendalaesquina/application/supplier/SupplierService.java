@@ -71,15 +71,13 @@ public class SupplierService {
 
     @Transactional
     public SupplierResponse create(CreateSupplierRequest request, String actorEmail) {
-        String name = normalizeRequired(request.name());
-        String nit = normalizeNullable(request.nit());
+        String name = normalizeName(request.name());
+        String nit = normalizeNit(request.nit());
         String phone = normalizeNullable(request.phone());
-        String email = normalizeNullable(request.email());
+        String email = normalizeEmail(request.email());
         String address = normalizeNullable(request.address());
 
-        if (nit != null && suppliers.existsByNitIgnoreCase(nit)) {
-            throw duplicateNit(nit);
-        }
+        validateDuplicateSupplier(name, nit, email, null);
 
         UserAccount actor = requireActor(actorEmail);
 
@@ -119,15 +117,13 @@ public class SupplierService {
         Supplier supplier = requireSupplier(id);
         UserAccount actor = requireActor(actorEmail);
 
-        String newName = normalizeRequired(request.name());
-        String newNit = normalizeNullable(request.nit());
+        String newName = normalizeName(request.name());
+        String newNit = normalizeNit(request.nit());
         String newPhone = normalizeNullable(request.phone());
-        String newEmail = normalizeNullable(request.email());
+        String newEmail = normalizeEmail(request.email());
         String newAddress = normalizeNullable(request.address());
 
-        if (newNit != null && suppliers.existsByNitIgnoreCaseAndIdNot(newNit, id)) {
-            throw duplicateNit(newNit);
-        }
+        validateDuplicateSupplier(newName, newNit, newEmail, id);
 
         Map<String, Object> beforeData = Map.of(
                 "name", supplier.getName(),
@@ -202,6 +198,39 @@ public class SupplierService {
         return toResponse(supplier);
     }
 
+    private void validateDuplicateSupplier(String name,
+                                           String nit,
+                                           String email,
+                                           Long excludedId) {
+        boolean duplicatedName = excludedId == null
+                ? suppliers.existsByNameIgnoreCase(name)
+                : suppliers.existsByNameIgnoreCaseAndIdNot(name, excludedId);
+
+        if (duplicatedName) {
+            throw duplicateName(name);
+        }
+
+        if (nit != null) {
+            boolean duplicatedNit = excludedId == null
+                    ? suppliers.existsByNitIgnoreCase(nit)
+                    : suppliers.existsByNitIgnoreCaseAndIdNot(nit, excludedId);
+
+            if (duplicatedNit) {
+                throw duplicateNit(nit);
+            }
+        }
+
+        if (email != null) {
+            boolean duplicatedEmail = excludedId == null
+                    ? suppliers.existsByEmailIgnoreCase(email)
+                    : suppliers.existsByEmailIgnoreCaseAndIdNot(email, excludedId);
+
+            if (duplicatedEmail) {
+                throw duplicateEmail(email);
+            }
+        }
+    }
+
     private Supplier requireSupplier(Long id) {
         return suppliers.findById(id)
                 .orElseThrow(() -> new ApiException(
@@ -236,6 +265,24 @@ public class SupplierService {
         );
     }
 
+    private String normalizeName(String value) {
+        String normalized = normalizeRequired(value);
+        return normalized.replaceAll("\\s+", " ");
+    }
+
+    private String normalizeNit(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return null;
+        }
+        return normalized.toUpperCase(Locale.ROOT).replaceAll("\\s+", "");
+    }
+
+    private String normalizeEmail(String value) {
+        String normalized = normalizeNullable(value);
+        return normalized == null ? null : normalized.toLowerCase(Locale.ROOT);
+    }
+
     private String normalizeRequired(String value) {
         return value == null ? "" : value.trim();
     }
@@ -249,12 +296,30 @@ public class SupplierService {
         return normalized.isEmpty() ? null : normalized;
     }
 
+    private ApiException duplicateName(String name) {
+        return new ApiException(
+                HttpStatus.CONFLICT,
+                "supplier_name_already_exists",
+                "Proveedor duplicado",
+                "Ya existe un proveedor registrado con el nombre " + name
+        );
+    }
+
     private ApiException duplicateNit(String nit) {
         return new ApiException(
                 HttpStatus.CONFLICT,
                 "supplier_nit_already_exists",
                 "NIT duplicado",
-                "Ya existe un proveedor con el NIT " + nit
+                "Ya existe un proveedor registrado con el NIT " + nit
+        );
+    }
+
+    private ApiException duplicateEmail(String email) {
+        return new ApiException(
+                HttpStatus.CONFLICT,
+                "supplier_email_already_exists",
+                "Correo duplicado",
+                "Ya existe un proveedor registrado con el correo " + email
         );
     }
 }

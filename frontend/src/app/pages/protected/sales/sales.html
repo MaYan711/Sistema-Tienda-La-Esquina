@@ -9,6 +9,43 @@
 <app-form-feedback [message]="errorMessage()" />
 <app-form-feedback [message]="successMessage()" tone="success" />
 
+@if (operatingHours(); as hours) {
+  <section
+    class="operating-hours-banner"
+    [class.operating-hours-banner--blocked]="hours.employeeRestricted && !hours.operationAllowed"
+    [class.operating-hours-banner--admin]="hours.role === 'ADMIN'"
+  >
+    <div class="operating-hours-banner__icon">
+      <i class="pi pi-clock"></i>
+    </div>
+
+    <div class="operating-hours-banner__content">
+      <span class="operating-hours-banner__eyebrow">CONTROL DE HORARIO</span>
+      <strong>Horario de ventas para empleados</strong>
+      <span>{{ hours.openingTime }} - {{ hours.closingTime }} · Hora de Guatemala</span>
+      <small>{{ hours.message }}</small>
+    </div>
+
+    <span
+      class="operating-hours-status"
+      [class.operating-hours-status--blocked]="hours.employeeRestricted && !hours.operationAllowed"
+    >
+      <i
+        class="pi"
+        [class.pi-check-circle]="hours.operationAllowed"
+        [class.pi-lock]="!hours.operationAllowed"
+      ></i>
+      @if (hours.role === 'ADMIN') {
+        Administrador sin restricción
+      } @else if (hours.operationAllowed) {
+        Turno habilitado
+      } @else {
+        Fuera de horario
+      }
+    </span>
+  </section>
+}
+
 <section class="sale-workspace">
   <div class="sale-main">
     <section class="sale-card product-card">
@@ -32,6 +69,7 @@
               formControlName="search"
               placeholder="Código o nombre del producto"
               autocomplete="off"
+              [disabled]="!canRegisterSale()"
             />
           </label>
 
@@ -89,6 +127,7 @@
             min="0.001"
             step="0.001"
             formControlName="quantity"
+            [disabled]="!canRegisterSale()"
           />
         </label>
 
@@ -96,6 +135,7 @@
           <button
             class="primary-button primary-button--compact"
             type="button"
+            [disabled]="!canRegisterSale()"
             (click)="addProduct()"
           >
             <i class="pi pi-plus"></i>
@@ -165,6 +205,7 @@
                         min="0.001"
                         step="0.001"
                         [value]="item.quantity"
+                        [disabled]="!canRegisterSale()"
                         (change)="updateQuantity(item.product.id, $event)"
                       />
                     </td>
@@ -184,6 +225,7 @@
                         class="remove-item"
                         type="button"
                         title="Quitar producto"
+                        [disabled]="!canRegisterSale()"
                         (click)="removeItem(item.product.id)"
                       >
                         <i class="pi pi-trash"></i>
@@ -284,6 +326,8 @@
                 <th>Cambio</th>
                 <th>Registrado por</th>
                 <th>Estado</th>
+                <th>Detalle</th>
+                <th>Comprobante</th>
               </tr>
             </thead>
 
@@ -334,6 +378,32 @@
                           : 'Cancelada'
                       }}
                     </span>
+                  </td>
+
+                  <td>
+                    <button
+                      class="receipt-row-button"
+                      type="button"
+                      [disabled]="detailLoading()"
+                      (click)="openSaleDetail(sale.id)"
+                      title="Ver detalle de la venta"
+                    >
+                      <i class="pi pi-eye"></i>
+                      Detalle
+                    </button>
+                  </td>
+
+                  <td>
+                    <button
+                      class="receipt-row-button"
+                      type="button"
+                      [disabled]="receiptLoading()"
+                      (click)="openReceipt(sale.id)"
+                      title="Ver comprobante"
+                    >
+                      <i class="pi pi-receipt"></i>
+                      Ver
+                    </button>
                   </td>
                 </tr>
               }
@@ -409,6 +479,7 @@
             step="0.01"
             formControlName="cashReceived"
             placeholder="0.00"
+            [disabled]="!canRegisterSale()"
           />
         </div>
       </label>
@@ -431,6 +502,7 @@
           rows="3"
           formControlName="notes"
           placeholder="Observaciones opcionales"
+          [disabled]="!canRegisterSale()"
         ></textarea>
       </label>
 
@@ -444,10 +516,21 @@
         </div>
       }
 
+
+      @if (!canRegisterSale()) {
+        <div class="operating-hours-payment-warning">
+          <i class="pi pi-lock"></i>
+          <div>
+            <strong>Registro de ventas bloqueado</strong>
+            <span>El empleado se encuentra fuera del horario autorizado.</span>
+          </div>
+        </div>
+      }
+
       <button
         class="primary-button confirm-sale-button"
         type="submit"
-        [disabled]="saving() || !hasEnoughCash()"
+        [disabled]="saving() || !hasEnoughCash() || !canRegisterSale()"
       >
         <i class="pi pi-check-circle"></i>
 
@@ -469,3 +552,349 @@
     </form>
   </aside>
 </section>
+
+@if (detailLoading() && !saleDetail()) {
+  <div class="receipt-loading-overlay">
+    <div class="receipt-loading-card">
+      <i class="pi pi-spin pi-spinner"></i>
+      Cargando detalle de venta...
+    </div>
+  </div>
+}
+
+@if (saleDetail(); as detail) {
+  <div
+    class="receipt-backdrop"
+    (click)="closeSaleDetail()"
+  ></div>
+
+  <section
+    class="receipt-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="sale-detail-title"
+  >
+    <header class="receipt-modal__header">
+      <div>
+        <span>Historial de ventas</span>
+        <h2 id="sale-detail-title">Detalle de venta</h2>
+      </div>
+
+      <button
+        class="receipt-close"
+        type="button"
+        aria-label="Cerrar detalle de venta"
+        (click)="closeSaleDetail()"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+
+    <div class="receipt-paper">
+      <div class="receipt-brand">
+        <div>
+          <strong>Tienda La Esquina</strong>
+          <span>Información completa de la venta registrada</span>
+        </div>
+
+        <div class="receipt-number">
+          <span>Venta</span>
+          <strong>{{ detail.saleNumber }}</strong>
+        </div>
+      </div>
+
+      <div class="receipt-meta">
+        <div>
+          <span>Fecha</span>
+          <strong>
+            {{
+              detail.saleDate
+                | date: 'dd/MM/yyyy HH:mm':'America/Guatemala'
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span>Registrado por</span>
+          <strong>{{ detail.soldByEmail }}</strong>
+        </div>
+
+        <div>
+          <span>Estado</span>
+          <strong>
+            {{
+              detail.status === 'COMPLETED'
+                ? 'Completada'
+                : 'Cancelada'
+            }}
+          </strong>
+        </div>
+      </div>
+
+      <div class="sale-detail-summary">
+        <div>
+          <span>Productos distintos</span>
+          <strong>{{ detail.differentProducts }}</strong>
+        </div>
+
+        <div>
+          <span>Unidades vendidas</span>
+          <strong>{{ detail.totalUnits | number: '1.0-3' }}</strong>
+        </div>
+
+        <div>
+          <span>Método de pago</span>
+          <strong>Efectivo</strong>
+        </div>
+
+        <div>
+          <span>Total de la venta</span>
+          <strong>Q {{ detail.totalAmount | number: '1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="receipt-items-scroll">
+        <table class="receipt-items">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cantidad</th>
+              <th>Precio unitario</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of detail.items; track item.id) {
+              <tr>
+                <td>
+                  <strong>{{ item.productName }}</strong>
+                  <small>{{ item.productCode }}</small>
+                </td>
+                <td>{{ item.quantity | number: '1.0-3' }}</td>
+                <td>Q {{ item.unitPrice | number: '1.2-2' }}</td>
+                <td>
+                  <strong>Q {{ item.lineTotal | number: '1.2-2' }}</strong>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="receipt-summary">
+        <div>
+          <span>Subtotal</span>
+          <strong>Q {{ detail.subtotalAmount | number: '1.2-2' }}</strong>
+        </div>
+        <div class="receipt-summary__total">
+          <span>Total</span>
+          <strong>Q {{ detail.totalAmount | number: '1.2-2' }}</strong>
+        </div>
+        <div>
+          <span>Efectivo recibido</span>
+          <strong>Q {{ detail.cashReceived | number: '1.2-2' }}</strong>
+        </div>
+        <div>
+          <span>Cambio</span>
+          <strong>Q {{ detail.changeAmount | number: '1.2-2' }}</strong>
+        </div>
+      </div>
+
+      @if (detail.notes) {
+        <div class="receipt-notes">
+          <span>Observaciones</span>
+          <p>{{ detail.notes }}</p>
+        </div>
+      } @else {
+        <div class="receipt-notes">
+          <span>Observaciones</span>
+          <p>Esta venta no tiene observaciones registradas.</p>
+        </div>
+      }
+    </div>
+
+    <footer class="receipt-actions">
+      <button
+        class="secondary-button"
+        type="button"
+        (click)="closeSaleDetail()"
+      >
+        Cerrar
+      </button>
+
+      <button
+        class="primary-button receipt-action-button"
+        type="button"
+        (click)="openReceiptFromDetail(detail.id)"
+      >
+        <i class="pi pi-receipt"></i>
+        Ver comprobante
+      </button>
+    </footer>
+  </section>
+}
+
+@if (receiptLoading() && !receipt()) {
+  <div class="receipt-loading-overlay">
+    <div class="receipt-loading-card">
+      <i class="pi pi-spin pi-spinner"></i>
+      Cargando comprobante...
+    </div>
+  </div>
+}
+
+@if (receipt(); as currentReceipt) {
+  <div
+    class="receipt-backdrop"
+    (click)="closeReceipt()"
+  ></div>
+
+  <section
+    class="receipt-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="receipt-title"
+  >
+    <header class="receipt-modal__header">
+      <div>
+        <span>Venta completada</span>
+        <h2 id="receipt-title">Comprobante de compra</h2>
+      </div>
+
+      <button
+        class="receipt-close"
+        type="button"
+        aria-label="Cerrar comprobante"
+        (click)="closeReceipt()"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+
+    <div class="receipt-paper">
+      <div class="receipt-brand">
+        <div>
+          <strong>{{ currentReceipt.storeName }}</strong>
+          <span>Comprobante interno de compra</span>
+        </div>
+
+        <div class="receipt-number">
+          <span>Venta</span>
+          <strong>{{ currentReceipt.saleNumber }}</strong>
+        </div>
+      </div>
+
+      <div class="receipt-meta">
+        <div>
+          <span>Fecha</span>
+          <strong>
+            {{
+              currentReceipt.saleDate
+                | date: 'dd/MM/yyyy HH:mm':'America/Guatemala'
+            }}
+          </strong>
+        </div>
+
+        <div>
+          <span>Atendido por</span>
+          <strong>{{ currentReceipt.soldByEmail }}</strong>
+        </div>
+
+        <div>
+          <span>Método de pago</span>
+          <strong>Efectivo</strong>
+        </div>
+      </div>
+
+      <div class="receipt-items-scroll">
+        <table class="receipt-items">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cant.</th>
+              <th>Precio</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (item of currentReceipt.items; track item.productId) {
+              <tr>
+                <td>
+                  <strong>{{ item.productName }}</strong>
+                  <small>{{ item.productCode }}</small>
+                </td>
+                <td>{{ item.quantity | number: '1.0-3' }}</td>
+                <td>Q {{ item.unitPrice | number: '1.2-2' }}</td>
+                <td>
+                  <strong>Q {{ item.lineTotal | number: '1.2-2' }}</strong>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="receipt-summary">
+        <div>
+          <span>Subtotal</span>
+          <strong>Q {{ currentReceipt.subtotalAmount | number: '1.2-2' }}</strong>
+        </div>
+        <div class="receipt-summary__total">
+          <span>Total</span>
+          <strong>Q {{ currentReceipt.totalAmount | number: '1.2-2' }}</strong>
+        </div>
+        <div>
+          <span>Efectivo recibido</span>
+          <strong>Q {{ currentReceipt.cashReceived | number: '1.2-2' }}</strong>
+        </div>
+        <div>
+          <span>Cambio</span>
+          <strong>Q {{ currentReceipt.changeAmount | number: '1.2-2' }}</strong>
+        </div>
+      </div>
+
+      @if (currentReceipt.notes) {
+        <div class="receipt-notes">
+          <span>Observaciones</span>
+          <p>{{ currentReceipt.notes }}</p>
+        </div>
+      }
+
+      <footer class="receipt-paper__footer">
+        <strong>Gracias por su compra.</strong>
+        <span>Comprobante interno; no sustituye una factura fiscal.</span>
+      </footer>
+    </div>
+
+    <footer class="receipt-actions">
+      <button
+        class="secondary-button"
+        type="button"
+        (click)="closeReceipt()"
+      >
+        Cerrar
+      </button>
+
+      <button
+        class="secondary-button receipt-action-button"
+        type="button"
+        (click)="printReceipt()"
+      >
+        <i class="pi pi-print"></i>
+        Imprimir
+      </button>
+
+      <button
+        class="primary-button receipt-action-button"
+        type="button"
+        (click)="downloadReceipt()"
+      >
+        <i class="pi pi-file-pdf"></i>
+        Descargar PDF
+      </button>
+    </footer>
+  </section>
+}
+

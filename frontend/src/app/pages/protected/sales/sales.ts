@@ -19,12 +19,17 @@ import {
 } from 'rxjs';
 
 import {
+  OperatingHoursStatus,
   Product,
   Sale,
+  SaleDetail,
+  SaleReceipt,
 } from '../../../core/models/store.models';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
+import { AuthSessionService } from '../../../core/services/auth-session.service';
 import { ProductService } from '../../../core/services/product.service';
+import { SaleReceiptExportService } from '../../../core/services/sale-receipt-export.service';
 import { SaleService } from '../../../core/services/sale.service';
 
 import { FormFeedbackComponent } from '../../../shared/components/form-feedback/form-feedback';
@@ -51,6 +56,8 @@ interface PendingSaleItem {
 })
 export class SalesPageComponent implements OnInit {
   private readonly salesApi = inject(SaleService);
+  private readonly session = inject(AuthSessionService);
+  private readonly receiptExport = inject(SaleReceiptExportService);
   private readonly productsApi = inject(ProductService);
   private readonly errors = inject(ApiErrorService);
   private readonly fb = inject(FormBuilder);
@@ -64,6 +71,11 @@ export class SalesPageComponent implements OnInit {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly searchingProducts = signal(false);
+  readonly receiptLoading = signal(false);
+  readonly receipt = signal<SaleReceipt | null>(null);
+  readonly detailLoading = signal(false);
+  readonly saleDetail = signal<SaleDetail | null>(null);
+  readonly operatingHours = signal<OperatingHoursStatus | null>(null);
 
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
@@ -103,6 +115,7 @@ export class SalesPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.loadOperatingHours();
     this.loadSales(0);
 
     this.filters.controls.reference.valueChanges
@@ -166,6 +179,29 @@ export class SalesPageComponent implements OnInit {
             },
           });
       });
+  }
+
+  loadOperatingHours(): void {
+    this.salesApi.getOperatingHours().subscribe({
+      next: (status) => {
+        this.operatingHours.set(status);
+      },
+      error: (error: unknown) => {
+        this.errorMessage.set(
+          this.errors.getMessage(error),
+        );
+      },
+    });
+  }
+
+  canRegisterSale(): boolean {
+    const status = this.operatingHours();
+
+    if (status) {
+      return status.operationAllowed;
+    }
+
+    return this.session.currentUser?.role === 'ADMIN';
   }
 
   loadSales(page = this.page()): void {
@@ -402,6 +438,14 @@ export class SalesPageComponent implements OnInit {
   }
 
   saveSale(): void {
+    if (!this.canRegisterSale()) {
+      this.errorMessage.set(
+        this.operatingHours()?.message ??
+          'No puedes registrar ventas fuera del horario autorizado.',
+      );
+      return;
+    }
+
     if (this.selectedItems().length === 0) {
       this.errorMessage.set(
         'Agrega al menos un producto a la venta.',
@@ -455,6 +499,29 @@ export class SalesPageComponent implements OnInit {
 
           this.resetSale();
           this.loadSales(0);
+          this.openReceipt(sale.id);
+        },
+        error: (error: unknown) => {
+          this.errorMessage.set(
+            this.errors.getMessage(error),
+          );
+          this.loadOperatingHours();
+        },
+      });
+  }
+
+  openSaleDetail(saleId: number): void {
+    this.detailLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.salesApi
+      .getDetail(saleId)
+      .pipe(
+        finalize(() => this.detailLoading.set(false)),
+      )
+      .subscribe({
+        next: (detail) => {
+          this.saleDetail.set(detail);
         },
         error: (error: unknown) => {
           this.errorMessage.set(
@@ -462,6 +529,62 @@ export class SalesPageComponent implements OnInit {
           );
         },
       });
+  }
+
+  closeSaleDetail(): void {
+    this.saleDetail.set(null);
+  }
+
+  openReceiptFromDetail(saleId: number): void {
+    this.closeSaleDetail();
+    this.openReceipt(saleId);
+  }
+
+  openReceipt(saleId: number): void {
+    this.receiptLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.salesApi
+      .getReceipt(saleId)
+      .pipe(
+        finalize(() => this.receiptLoading.set(false)),
+      )
+      .subscribe({
+        next: (receipt) => {
+          this.receipt.set(receipt);
+        },
+        error: (error: unknown) => {
+          this.errorMessage.set(
+            this.errors.getMessage(error),
+          );
+        },
+      });
+  }
+
+  closeReceipt(): void {
+    this.receipt.set(null);
+  }
+
+  downloadReceipt(): void {
+    const receipt = this.receipt();
+
+    if (receipt) {
+      this.receiptExport.downloadPdf(receipt);
+    }
+  }
+
+  printReceipt(): void {
+    const receipt = this.receipt();
+
+    if (!receipt) {
+      return;
+    }
+
+    if (!this.receiptExport.print(receipt)) {
+      this.errorMessage.set(
+        'El navegador bloqueó la ventana de impresión. Habilita las ventanas emergentes e intenta nuevamente.',
+      );
+    }
   }
 
   resetSale(): void {
