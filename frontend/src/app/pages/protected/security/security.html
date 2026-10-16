@@ -195,3 +195,250 @@
     }
   </section>
 </div>
+
+@if (isAdmin()) {
+  <section class="operating-hours-admin">
+    <div class="operating-hours-admin__heading">
+      <div class="operating-hours-admin__title">
+        <span class="operating-hours-admin__icon"><i class="pi pi-clock"></i></span>
+        <div>
+          <span class="settings-card__eyebrow">CONTROL ADMINISTRATIVO</span>
+          <h2>Horario operativo de ventas</h2>
+          <p>
+            Define el horario semanal de los empleados y registra excepciones para feriados,
+            cierres o jornadas especiales.
+          </p>
+        </div>
+      </div>
+
+      @if (scheduleConfiguration(); as configuration) {
+        <div class="operating-hours-admin__meta">
+          <span>Zona horaria</span>
+          <strong>{{ configuration.timeZone }}</strong>
+          <small>
+            {{ configuration.enabled ? 'Restricción activa' : 'Restricción desactivada desde configuración' }}
+          </small>
+        </div>
+      }
+    </div>
+
+    <app-form-feedback [message]="scheduleError()" />
+    <app-form-feedback [message]="scheduleSuccess()" tone="success" />
+
+    @if (scheduleLoading()) {
+      <div class="schedule-loading">
+        <i class="pi pi-spin pi-spinner"></i>
+        Cargando horario operativo...
+      </div>
+    } @else if (scheduleConfiguration()) {
+      <div class="schedule-section">
+        <div class="schedule-section__heading">
+          <div>
+            <span class="schedule-section__eyebrow">HORARIO REGULAR</span>
+            <h3>Horario semanal</h3>
+            <p>
+              Los días sin configuración previa utilizan inicialmente el horario predeterminado del sistema.
+            </p>
+          </div>
+          <button
+            class="secondary-button"
+            type="button"
+            [disabled]="scheduleSaving()"
+            (click)="saveWeeklySchedule()"
+          >
+            @if (scheduleSaving()) {
+              <i class="pi pi-spin pi-spinner"></i>
+            } @else {
+              <i class="pi pi-save"></i>
+            }
+            Guardar horario
+          </button>
+        </div>
+
+        <div class="weekly-schedule">
+          @for (day of weeklySchedule(); track day.dayOfWeek) {
+            <article class="weekly-day" [class.weekly-day--closed]="!day.enabled">
+              <div class="weekly-day__identity">
+                <label class="schedule-switch">
+                  <input
+                    type="checkbox"
+                    [checked]="day.enabled"
+                    (change)="setDayEnabled(day.dayOfWeek, $any($event.target).checked)"
+                  />
+                  <span></span>
+                </label>
+                <div>
+                  <strong>{{ day.label }}</strong>
+                  <small>{{ day.enabled ? 'Abierto' : 'Cerrado' }}</small>
+                </div>
+              </div>
+
+              <div class="weekly-day__times" [class.weekly-day__times--disabled]="!day.enabled">
+                <label>
+                  <span>Apertura</span>
+                  <input
+                    type="time"
+                    [value]="day.openingTime"
+                    [disabled]="!day.enabled"
+                    (change)="setDayTime(day.dayOfWeek, 'openingTime', $any($event.target).value)"
+                  />
+                </label>
+                <label>
+                  <span>Cierre</span>
+                  <input
+                    type="time"
+                    [value]="day.closingTime"
+                    [disabled]="!day.enabled"
+                    (change)="setDayTime(day.dayOfWeek, 'closingTime', $any($event.target).value)"
+                  />
+                </label>
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+
+      <div class="schedule-section schedule-section--exceptions">
+        <div class="schedule-section__heading">
+          <div>
+            <span class="schedule-section__eyebrow">FERIADOS Y CASOS ESPECIALES</span>
+            <h3>Excepciones por fecha</h3>
+            <p>
+              Una excepción tiene prioridad sobre el horario semanal. Puedes cerrar la tienda o indicar
+              una jornada distinta para una fecha específica.
+            </p>
+          </div>
+        </div>
+
+        <div class="exception-layout">
+          <form
+            class="exception-form"
+            [formGroup]="exceptionForm"
+            (ngSubmit)="saveException()"
+            novalidate
+          >
+            <div class="exception-form__heading">
+              <strong>{{ editingExceptionId() === null ? 'Nueva excepción' : 'Editar excepción' }}</strong>
+              @if (editingExceptionId() !== null) {
+                <button class="text-button" type="button" (click)="cancelExceptionEdit()">
+                  Cancelar edición
+                </button>
+              }
+            </div>
+
+            <app-form-feedback [message]="exceptionError()" />
+            <app-form-feedback [message]="exceptionSuccess()" tone="success" />
+
+            <label class="schedule-field">
+              <span>Fecha</span>
+              <input
+                type="date"
+                formControlName="date"
+                [min]="minExceptionDate"
+              />
+            </label>
+
+            <label class="closed-check">
+              <input type="checkbox" formControlName="closed" />
+              <span>
+                <strong>Tienda cerrada</strong>
+                <small>No se permitirán ventas de empleados durante toda esta fecha.</small>
+              </span>
+            </label>
+
+            @if (!exceptionForm.controls.closed.value) {
+              <div class="exception-times">
+                <label class="schedule-field">
+                  <span>Apertura especial</span>
+                  <input type="time" formControlName="openingTime" />
+                </label>
+                <label class="schedule-field">
+                  <span>Cierre especial</span>
+                  <input type="time" formControlName="closingTime" />
+                </label>
+              </div>
+            }
+
+            <label class="schedule-field">
+              <span>Motivo</span>
+              <input
+                type="text"
+                formControlName="reason"
+                maxlength="160"
+                placeholder="Ej. Navidad, inventario, evento especial"
+              />
+            </label>
+
+            <button
+              class="primary-button exception-submit"
+              type="submit"
+              [disabled]="exceptionSaving()"
+            >
+              @if (exceptionSaving()) {
+                <i class="pi pi-spin pi-spinner"></i>
+              } @else {
+                <i class="pi pi-calendar-plus"></i>
+              }
+              {{ editingExceptionId() === null ? 'Agregar excepción' : 'Guardar cambios' }}
+            </button>
+          </form>
+
+          <div class="exception-list">
+            <div class="exception-list__heading">
+              <strong>Fechas configuradas</strong>
+              <span>{{ scheduleConfiguration()?.exceptions?.length ?? 0 }} registradas</span>
+            </div>
+
+            @if ((scheduleConfiguration()?.exceptions?.length ?? 0) === 0) {
+              <div class="exception-empty">
+                <i class="pi pi-calendar"></i>
+                <strong>No hay excepciones registradas</strong>
+                <span>El sistema utilizará el horario semanal para todos los días.</span>
+              </div>
+            } @else {
+              <div class="exception-items">
+                @for (exception of scheduleConfiguration()?.exceptions ?? []; track exception.id) {
+                  <article class="exception-item">
+                    <div class="exception-item__date">
+                      <strong>{{ formatDate(exception.date) }}</strong>
+                      <span [class.exception-item__closed]="exception.closed">
+                        @if (exception.closed) {
+                          Cerrado
+                        } @else {
+                          {{ exception.openingTime }} - {{ exception.closingTime }}
+                        }
+                      </span>
+                    </div>
+                    <div class="exception-item__body">
+                      <strong>{{ exception.reason || 'Horario especial' }}</strong>
+                      <small>
+                        Actualizado por {{ exception.updatedByEmail || 'administrador' }}
+                      </small>
+                    </div>
+                    <div class="exception-item__actions">
+                      <button
+                        type="button"
+                        title="Editar excepción"
+                        (click)="editException(exception)"
+                      >
+                        <i class="pi pi-pencil"></i>
+                      </button>
+                      <button
+                        type="button"
+                        class="danger-action"
+                        title="Eliminar excepción"
+                        (click)="deleteException(exception)"
+                      >
+                        <i class="pi pi-trash"></i>
+                      </button>
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </section>
+}

@@ -358,14 +358,65 @@ export interface SaleReceipt {
 export interface OperatingHoursStatus {
   enabled: boolean;
   timeZone: string;
-  openingTime: string;
-  closingTime: string;
+  openingTime: string | null;
+  closingTime: string | null;
   currentDate: string;
   currentTime: string;
   role: 'ADMIN' | 'EMPLOYEE';
   employeeRestricted: boolean;
   operationAllowed: boolean;
+  closedToday: boolean;
+  scheduleSource: 'DEFAULT' | 'WEEKLY' | 'EXCEPTION';
+  reason: string | null;
   message: string;
+}
+
+export interface OperatingHourDayConfig {
+  dayOfWeek: string;
+  label: string;
+  enabled: boolean;
+  openingTime: string;
+  closingTime: string;
+  configured: boolean;
+}
+
+export interface OperatingHourException {
+  id: number;
+  date: string;
+  closed: boolean;
+  openingTime: string | null;
+  closingTime: string | null;
+  reason: string | null;
+  updatedByEmail: string | null;
+  updatedAt: string;
+}
+
+export interface OperatingHoursConfiguration {
+  enabled: boolean;
+  timeZone: string;
+  defaultOpeningTime: string;
+  defaultClosingTime: string;
+  weekly: OperatingHourDayConfig[];
+  exceptions: OperatingHourException[];
+}
+
+export interface OperatingHourDayRequest {
+  dayOfWeek: string;
+  enabled: boolean;
+  openingTime: string;
+  closingTime: string;
+}
+
+export interface UpdateOperatingHoursRequest {
+  days: OperatingHourDayRequest[];
+}
+
+export interface OperatingHourExceptionRequest {
+  date: string;
+  closed: boolean;
+  openingTime: string | null;
+  closingTime: string | null;
+  reason: string | null;
 }
 
 export interface SaleSearchParams {

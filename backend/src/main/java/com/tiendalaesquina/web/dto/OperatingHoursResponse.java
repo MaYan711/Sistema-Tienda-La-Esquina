@@ -10,6 +10,9 @@ public record OperatingHoursResponse(
         String role,
         boolean employeeRestricted,
         boolean operationAllowed,
+        boolean closedToday,
+        String scheduleSource,
+        String reason,
         String message
 ) {
 }
