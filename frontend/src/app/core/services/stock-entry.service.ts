@@ -7,6 +7,7 @@ import {
   PageResponse,
   StockEntry,
   StockEntrySearchParams,
+  SupplierPriceComparison,
 } from '../models/store.models';
 
 @Injectable({ providedIn: 'root' })
@@ -42,6 +43,15 @@ export class StockEntryService {
     return this.http.get<PageResponse<StockEntry>>(this.url, {
       params: httpParams,
     });
+  }
+
+  compareSuppliers(productId: number): Observable<SupplierPriceComparison> {
+    return this.http.get<SupplierPriceComparison>(
+      `${this.url}/supplier-comparison`,
+      {
+        params: new HttpParams().set('productId', productId),
+      },
+    );
   }
 
   getById(id: number): Observable<StockEntry> {

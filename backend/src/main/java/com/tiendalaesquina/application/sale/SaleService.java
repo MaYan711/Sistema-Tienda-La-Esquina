@@ -7,21 +7,23 @@ import com.tiendalaesquina.domain.model.InventorySourceType;
 import com.tiendalaesquina.domain.model.Product;
 import com.tiendalaesquina.domain.model.Sale;
 import com.tiendalaesquina.domain.model.SaleItem;
-import com.tiendalaesquina.domain.model.StockNotification;
-import com.tiendalaesquina.domain.model.StockNotificationType;
-import com.tiendalaesquina.domain.model.StockStatus;
 import com.tiendalaesquina.domain.model.UserAccount;
 import com.tiendalaesquina.domain.repository.AuditEventRepository;
 import com.tiendalaesquina.domain.repository.InventoryMovementRepository;
 import com.tiendalaesquina.domain.repository.ProductRepository;
 import com.tiendalaesquina.domain.repository.SaleItemRepository;
 import com.tiendalaesquina.domain.repository.SaleRepository;
-import com.tiendalaesquina.domain.repository.StockNotificationRepository;
 import com.tiendalaesquina.domain.repository.UserAccountRepository;
+import com.tiendalaesquina.application.inventory.StockNotificationService;
+import com.tiendalaesquina.application.schedule.EmployeeOperatingHoursService;
 import com.tiendalaesquina.exception.ApiException;
 import com.tiendalaesquina.web.dto.CreateSaleItemRequest;
 import com.tiendalaesquina.web.dto.CreateSaleRequest;
+import com.tiendalaesquina.web.dto.SaleDetailItemResponse;
+import com.tiendalaesquina.web.dto.SaleDetailResponse;
 import com.tiendalaesquina.web.dto.SaleItemResponse;
+import com.tiendalaesquina.web.dto.SaleReceiptItemResponse;
+import com.tiendalaesquina.web.dto.SaleReceiptResponse;
 import com.tiendalaesquina.web.dto.SaleResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -53,8 +55,9 @@ public class SaleService {
     private final ProductRepository products;
     private final UserAccountRepository users;
     private final InventoryMovementRepository movements;
-    private final StockNotificationRepository notifications;
+    private final StockNotificationService stockNotifications;
     private final AuditEventRepository auditEvents;
+    private final EmployeeOperatingHoursService operatingHours;
 
     public SaleService(
             SaleRepository sales,
@@ -62,21 +65,24 @@ public class SaleService {
             ProductRepository products,
             UserAccountRepository users,
             InventoryMovementRepository movements,
-            StockNotificationRepository notifications,
-            AuditEventRepository auditEvents
+            StockNotificationService stockNotifications,
+            AuditEventRepository auditEvents,
+            EmployeeOperatingHoursService operatingHours
     ) {
         this.sales = sales;
         this.saleItems = saleItems;
         this.products = products;
         this.users = users;
         this.movements = movements;
-        this.notifications = notifications;
+        this.stockNotifications = stockNotifications;
         this.auditEvents = auditEvents;
+        this.operatingHours = operatingHours;
     }
 
     @Transactional
     public SaleResponse create(CreateSaleRequest request, String actorEmail) {
         UserAccount actor = requireActor(actorEmail);
+        operatingHours.assertCanRegisterSale(actor);
 
         validateNoDuplicateProducts(request.items());
 
@@ -194,7 +200,7 @@ public class SaleService {
                     Instant.now()
             ));
 
-            createStockNotificationIfNeeded(product);
+            stockNotifications.handleStockStatusChange(product, quantityBefore, quantityAfter);
 
             itemResponses.add(toItemResponse(item));
         }
@@ -230,6 +236,68 @@ public class SaleService {
         return toResponse(
                 sale,
                 items.stream().map(this::toItemResponse).toList()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public SaleDetailResponse getDetail(Long id) {
+        Sale sale = requireSale(id);
+        List<SaleItem> items = saleItems.findBySaleId(id);
+
+        BigDecimal totalUnits = items.stream()
+                .map(SaleItem::getQuantity)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .stripTrailingZeros();
+
+        List<SaleDetailItemResponse> detailItems = items.stream()
+                .map(this::toDetailItemResponse)
+                .toList();
+
+        UserAccount actor = sale.getSoldBy();
+
+        return new SaleDetailResponse(
+                sale.getId(),
+                sale.getSaleNumber(),
+                sale.getSaleDate(),
+                actor.getId(),
+                actor.getEmail(),
+                "EFECTIVO",
+                sale.getStatus().name(),
+                detailItems.size(),
+                totalUnits,
+                sale.getSubtotalAmount(),
+                sale.getTotalAmount(),
+                sale.getCashReceived(),
+                sale.getChangeAmount(),
+                sale.getNotes(),
+                detailItems,
+                sale.getCreatedAt()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public SaleReceiptResponse getReceipt(Long id) {
+        Sale sale = requireSale(id);
+        List<SaleItem> items = saleItems.findBySaleId(id);
+
+        List<SaleReceiptItemResponse> receiptItems = items.stream()
+                .map(this::toReceiptItemResponse)
+                .toList();
+
+        return new SaleReceiptResponse(
+                "Tienda La Esquina",
+                "Comprobante de compra",
+                sale.getId(),
+                sale.getSaleNumber(),
+                sale.getSaleDate(),
+                sale.getSoldBy().getEmail(),
+                "EFECTIVO",
+                sale.getSubtotalAmount(),
+                sale.getTotalAmount(),
+                sale.getCashReceived(),
+                sale.getChangeAmount(),
+                sale.getNotes(),
+                receiptItems
         );
     }
 
@@ -368,42 +436,6 @@ public class SaleService {
         }
     }
 
-    private void createStockNotificationIfNeeded(Product product) {
-        StockStatus status = product.getStockStatus();
-
-        if (status == StockStatus.OUT_OF_STOCK) {
-            if (!notifications.existsByProductIdAndNotificationTypeAndIsReadFalse(
-                    product.getId(),
-                    StockNotificationType.OUT_OF_STOCK
-            )) {
-                notifications.save(new StockNotification(
-                        product,
-                        StockNotificationType.OUT_OF_STOCK,
-                        "Producto agotado",
-                        "El producto " + product.getName() + " se encuentra agotado."
-                ));
-            }
-        } else if (status == StockStatus.LOW_STOCK) {
-            if (!notifications.existsByProductIdAndNotificationTypeAndIsReadFalse(
-                    product.getId(),
-                    StockNotificationType.LOW_STOCK
-            )) {
-                notifications.save(new StockNotification(
-                        product,
-                        StockNotificationType.LOW_STOCK,
-                        "Existencia baja",
-                        "El producto "
-                                + product.getName()
-                                + " tiene "
-                                + product.getCurrentStock()
-                                + " unidades y su minimo es "
-                                + product.getMinimumStock()
-                                + "."
-                ));
-            }
-        }
-    }
-
     private SaleItemResponse toItemResponse(SaleItem item) {
         Product product = item.getProduct();
 
@@ -415,6 +447,33 @@ public class SaleService {
                 item.getQuantity(),
                 item.getUnitPrice(),
                 item.getUnitCostSnapshot(),
+                item.getLineTotal()
+        );
+    }
+
+    private SaleDetailItemResponse toDetailItemResponse(SaleItem item) {
+        Product product = item.getProduct();
+
+        return new SaleDetailItemResponse(
+                item.getId(),
+                product.getId(),
+                product.getCode(),
+                product.getName(),
+                item.getQuantity(),
+                item.getUnitPrice(),
+                item.getLineTotal()
+        );
+    }
+
+    private SaleReceiptItemResponse toReceiptItemResponse(SaleItem item) {
+        Product product = item.getProduct();
+
+        return new SaleReceiptItemResponse(
+                product.getId(),
+                product.getCode(),
+                product.getName(),
+                item.getQuantity(),
+                item.getUnitPrice(),
                 item.getLineTotal()
         );
     }

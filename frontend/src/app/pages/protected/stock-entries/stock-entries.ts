@@ -13,6 +13,7 @@ import {
   Product,
   StockEntry,
   Supplier,
+  SupplierPriceComparison,
 } from '../../../core/models/store.models';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
@@ -68,6 +69,11 @@ readonly selectedItems = signal<PendingEntryItem[]>([]);
   readonly totalPages = signal(0);
 
   readonly entryModalOpen = signal(false);
+  readonly comparisonModalOpen = signal(false);
+  readonly comparisonLoading = signal(false);
+  readonly comparisonResults = signal<Product[]>([]);
+  readonly comparisonSelectedProduct = signal<Product | null>(null);
+  readonly comparisonData = signal<SupplierPriceComparison | null>(null);
 
   readonly filters = this.fb.group({
     supplierId: [''],
@@ -81,6 +87,10 @@ readonly selectedItems = signal<PendingEntryItem[]>([]);
     entryDate: [this.today(), Validators.required],
     documentNumber: [''],
     notes: [''],
+  });
+
+  readonly comparisonForm = this.fb.nonNullable.group({
+    search: [''],
   });
 
   readonly productForm = this.fb.nonNullable.group({
@@ -158,6 +168,39 @@ readonly selectedItems = signal<PendingEntryItem[]>([]);
             },
           });
       });
+
+    this.comparisonForm.controls.search.valueChanges
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((value) => {
+        const search = value.trim();
+
+        if (!search) {
+          this.comparisonResults.set([]);
+          return;
+        }
+
+        this.productsApi
+          .search({
+            search,
+            active: true,
+            page: 0,
+            size: 8,
+            sortBy: 'name',
+            direction: 'asc',
+          })
+          .subscribe({
+            next: (response) => {
+              this.comparisonResults.set(response.content ?? []);
+            },
+            error: (error: unknown) => {
+              this.errorMessage.set(this.errors.getMessage(error));
+            },
+          });
+      });
   }
 
   loadEntries(page = this.page()): void {
@@ -204,6 +247,54 @@ readonly selectedItems = signal<PendingEntryItem[]>([]);
         response.totalPages ??
         1,
     );
+  }
+
+  openComparison(): void {
+    this.comparisonForm.reset({ search: '' });
+    this.comparisonResults.set([]);
+    this.comparisonSelectedProduct.set(null);
+    this.comparisonData.set(null);
+    this.comparisonModalOpen.set(true);
+  }
+
+  closeComparison(): void {
+    this.comparisonModalOpen.set(false);
+    this.comparisonResults.set([]);
+    this.comparisonSelectedProduct.set(null);
+    this.comparisonData.set(null);
+  }
+
+  selectComparisonProduct(product: Product): void {
+    this.comparisonSelectedProduct.set(product);
+    this.comparisonResults.set([]);
+    this.comparisonForm.patchValue({
+      search: `${product.code} - ${product.name}`,
+    }, { emitEvent: false });
+    this.loadSupplierComparison(product.id);
+  }
+
+  loadSupplierComparison(productId?: number): void {
+    const id = productId ?? this.comparisonSelectedProduct()?.id;
+
+    if (!id) {
+      this.errorMessage.set('Selecciona un producto para comparar proveedores.');
+      return;
+    }
+
+    this.comparisonLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.stockEntriesApi
+      .compareSuppliers(id)
+      .pipe(finalize(() => this.comparisonLoading.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.comparisonData.set(response);
+        },
+        error: (error: unknown) => {
+          this.errorMessage.set(this.errors.getMessage(error));
+        },
+      });
   }
 
   openCreate(): void {

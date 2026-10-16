@@ -1,8 +1,10 @@
 package com.tiendalaesquina.web.stockentry;
 
 import com.tiendalaesquina.application.stockentry.StockEntryService;
+import com.tiendalaesquina.application.stockentry.SupplierPriceComparisonService;
 import com.tiendalaesquina.web.dto.CreateStockEntryRequest;
 import com.tiendalaesquina.web.dto.StockEntryResponse;
+import com.tiendalaesquina.web.dto.SupplierPriceComparisonResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,9 +47,14 @@ public class StockEntryController {
     );
 
     private final StockEntryService stockEntries;
+    private final SupplierPriceComparisonService supplierPriceComparison;
 
-    public StockEntryController(StockEntryService stockEntries) {
+    public StockEntryController(
+            StockEntryService stockEntries,
+            SupplierPriceComparisonService supplierPriceComparison
+    ) {
         this.stockEntries = stockEntries;
+        this.supplierPriceComparison = supplierPriceComparison;
     }
 
     @PostMapping
@@ -105,6 +112,19 @@ public class StockEntryController {
                 reference,
                 pageable
         );
+    }
+
+
+    @GetMapping("/supplier-comparison")
+    @PreAuthorize("hasRole('ADMIN')")
+    @Operation(
+            summary = "Comparar precios de proveedores por producto",
+            description = "Compara el costo unitario mas reciente e historial de compra del producto entre proveedores activos y recomienda el de menor costo reciente"
+    )
+    public SupplierPriceComparisonResponse compareSuppliers(
+            @RequestParam Long productId
+    ) {
+        return supplierPriceComparison.compare(productId);
     }
 
     @GetMapping("/{id}")

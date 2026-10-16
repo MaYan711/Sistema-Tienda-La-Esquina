@@ -5,14 +5,25 @@
     descriptionKey="stockEntries.description"
   />
 
-  <button
-    class="primary-button primary-button--inline"
-    type="button"
-    (click)="openCreate()"
-  >
-    <i class="pi pi-plus"></i>
-    <span>Nueva entrada</span>
-  </button>
+  <div class="toolbar-actions">
+    <button
+      class="secondary-button toolbar-button"
+      type="button"
+      (click)="openComparison()"
+    >
+      <i class="pi pi-chart-bar"></i>
+      <span>Comparar proveedores</span>
+    </button>
+
+    <button
+      class="primary-button primary-button--inline"
+      type="button"
+      (click)="openCreate()"
+    >
+      <i class="pi pi-plus"></i>
+      <span>Nueva entrada</span>
+    </button>
+  </div>
 </div>
 
 <app-form-feedback [message]="errorMessage()" />
@@ -425,5 +436,193 @@
         </button>
       </footer>
     </form>
+  </section>
+}
+
+@if (comparisonModalOpen()) {
+  <div class="modal-backdrop" (click)="closeComparison()"></div>
+
+  <section class="store-modal store-modal--wide comparison-modal">
+    <header>
+      <div>
+        <span>Análisis de compras</span>
+        <h2>Comparar proveedores</h2>
+      </div>
+
+      <button
+        type="button"
+        title="Cerrar"
+        (click)="closeComparison()"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+
+    <p class="comparison-intro">
+      Selecciona un producto para comparar el costo unitario registrado en las entradas de mercadería y conocer qué proveedor ha ofrecido el menor precio reciente.
+    </p>
+
+    <div class="comparison-search" [formGroup]="comparisonForm">
+      <div class="product-search-field">
+        <label>
+          <span>Producto a comparar</span>
+          <input
+            type="search"
+            formControlName="search"
+            placeholder="Código o nombre del producto"
+            autocomplete="off"
+          />
+        </label>
+
+        @if (comparisonResults().length > 0) {
+          <div class="search-results">
+            @for (product of comparisonResults(); track product.id) {
+              <button
+                type="button"
+                class="search-result"
+                (click)="selectComparisonProduct(product)"
+              >
+                <div>
+                  <strong>{{ product.name }}</strong>
+                  <small>{{ product.code }}</small>
+                </div>
+
+                <span>
+                  Costo actual Q {{ product.purchasePrice | number: '1.2-4' }}
+                </span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (comparisonLoading()) {
+      <div class="comparison-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        Analizando historial de compras...
+      </div>
+    } @else if (comparisonData(); as comparison) {
+      <section class="comparison-product">
+        <div>
+          <span>Producto analizado</span>
+          <strong>{{ comparison.productName }}</strong>
+          <small>{{ comparison.productCode }}</small>
+        </div>
+
+        <div>
+          <span>Costo de compra actual</span>
+          <strong>Q {{ comparison.currentPurchasePrice | number: '1.2-4' }}</strong>
+        </div>
+
+        <div>
+          <span>Proveedores comparados</span>
+          <strong>{{ comparison.suppliersCompared }}</strong>
+        </div>
+      </section>
+
+      @if (comparison.suppliers.length === 0) {
+        <div class="comparison-state comparison-state--empty">
+          <i class="pi pi-info-circle"></i>
+          <strong>Sin historial suficiente</strong>
+          <span>{{ comparison.recommendation }}</span>
+        </div>
+      } @else {
+        <section class="recommendation-card">
+          <div class="recommendation-icon">
+            <i class="pi pi-star-fill"></i>
+          </div>
+
+          <div class="recommendation-main">
+            <span>Proveedor recomendado</span>
+            <strong>{{ comparison.recommendedSupplierName }}</strong>
+            <p>{{ comparison.recommendation }}</p>
+          </div>
+
+          <div class="recommendation-price">
+            <span>Mejor costo reciente</span>
+            <strong>Q {{ comparison.recommendedUnitCost | number: '1.2-4' }}</strong>
+            @if (comparison.suppliersCompared > 1 && comparison.savingsPerUnit > 0) {
+              <small>
+                Ahorro hasta Q {{ comparison.savingsPerUnit | number: '1.2-4' }}
+                por unidad ({{ comparison.savingsPercentage | number: '1.2-2' }}%)
+              </small>
+            }
+          </div>
+        </section>
+
+        <div class="table-scroll comparison-table">
+          <table class="store-table">
+            <thead>
+              <tr>
+                <th>Proveedor</th>
+                <th>Último costo</th>
+                <th>Promedio histórico</th>
+                <th>Rango histórico</th>
+                <th>Compras</th>
+                <th>Última compra</th>
+                <th>Diferencia</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (supplier of comparison.suppliers; track supplier.supplierId) {
+                <tr [class.recommended-row]="supplier.recommended">
+                  <td>
+                    <div class="comparison-supplier">
+                      <strong>{{ supplier.supplierName }}</strong>
+                      <small>{{ supplier.supplierNit || 'Sin NIT' }}</small>
+                      @if (supplier.recommended) {
+                        <span class="best-price-pill">Mejor precio</span>
+                      }
+                    </div>
+                  </td>
+                  <td><strong>Q {{ supplier.latestUnitCost | number: '1.2-4' }}</strong></td>
+                  <td>Q {{ supplier.averageUnitCost | number: '1.2-4' }}</td>
+                  <td>
+                    Q {{ supplier.minimumUnitCost | number: '1.2-4' }}
+                    -
+                    Q {{ supplier.maximumUnitCost | number: '1.2-4' }}
+                  </td>
+                  <td>{{ supplier.purchaseCount }}</td>
+                  <td>{{ supplier.lastPurchaseDate | date: 'dd/MM/yyyy':'America/Guatemala' }}</td>
+                  <td>
+                    @if (supplier.differenceFromBest === 0) {
+                      <span class="best-price-text">Mejor opción</span>
+                    } @else {
+                      <span>
+                        + Q {{ supplier.differenceFromBest | number: '1.2-4' }}
+                        ({{ supplier.percentageAboveBest | number: '1.2-2' }}%)
+                      </span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="comparison-note">
+          <i class="pi pi-info-circle"></i>
+          La recomendación utiliza el costo unitario más reciente registrado para cada proveedor. El promedio y rango histórico se muestran como referencia adicional.
+        </div>
+      }
+    } @else {
+      <div class="comparison-state comparison-state--empty">
+        <i class="pi pi-search"></i>
+        <strong>Busca un producto</strong>
+        <span>La comparación se mostrará después de seleccionar un producto.</span>
+      </div>
+    }
+
+    <footer class="modal-actions comparison-actions">
+      <button
+        class="secondary-button secondary-button--compact"
+        type="button"
+        (click)="closeComparison()"
+      >
+        Cerrar
+      </button>
+    </footer>
   </section>
 }

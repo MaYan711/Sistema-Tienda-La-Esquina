@@ -7,9 +7,17 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface SupplierRepository
         extends JpaRepository<Supplier, Long>, JpaSpecificationExecutor<Supplier> {
 
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
+
     boolean existsByNitIgnoreCase(String nit);
 
     boolean existsByNitIgnoreCaseAndIdNot(String nit, Long id);
+
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 
     long countByActiveTrue();
 }

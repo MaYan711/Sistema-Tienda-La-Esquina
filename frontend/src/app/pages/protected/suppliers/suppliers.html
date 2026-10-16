@@ -241,6 +241,18 @@
       [formGroup]="supplierForm"
       (ngSubmit)="saveSupplier()"
     >
+      <app-form-feedback [message]="modalErrorMessage()" />
+
+      <div class="duplicate-validation-note">
+        <i class="pi pi-shield"></i>
+        <div>
+          <strong>Validación de duplicados activa</strong>
+          <span>
+            No se permite registrar otro proveedor con el mismo nombre, NIT o correo electrónico.
+          </span>
+        </div>
+      </div>
+
       <label>
         <span>Nombre</span>
         <input

@@ -3,11 +3,13 @@ package com.tiendalaesquina.application.inventory;
 import com.tiendalaesquina.domain.model.Product;
 import com.tiendalaesquina.domain.model.StockNotification;
 import com.tiendalaesquina.domain.model.StockNotificationType;
+import com.tiendalaesquina.domain.model.StockStatus;
 import com.tiendalaesquina.domain.model.UserAccount;
 import com.tiendalaesquina.domain.repository.StockNotificationRepository;
 import com.tiendalaesquina.domain.repository.UserAccountRepository;
 import com.tiendalaesquina.exception.ApiException;
 import com.tiendalaesquina.web.dto.StockNotificationResponse;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -15,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Locale;
 
 @Service
@@ -22,11 +25,14 @@ public class StockNotificationService {
 
     private final StockNotificationRepository notifications;
     private final UserAccountRepository users;
+    private final ApplicationEventPublisher events;
 
     public StockNotificationService(StockNotificationRepository notifications,
-                                    UserAccountRepository users) {
+                                    UserAccountRepository users,
+                                    ApplicationEventPublisher events) {
         this.notifications = notifications;
         this.users = users;
+        this.events = events;
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +87,77 @@ public class StockNotificationService {
         }
 
         return toResponse(notification);
+    }
+
+    @Transactional
+    public void handleStockStatusChange(Product product,
+                                        BigDecimal previousStock,
+                                        BigDecimal currentStock) {
+        StockStatus previousStatus = StockStatus.from(previousStock, product.getMinimumStock());
+        handleStockStatusTransition(product, previousStatus, currentStock);
+    }
+
+    @Transactional
+    public void handleProductConfigurationChange(Product product, StockStatus previousStatus) {
+        handleStockStatusTransition(product, previousStatus, product.getCurrentStock());
+    }
+
+    @Transactional
+    public void handleInitialStockState(Product product) {
+        StockStatus currentStatus = product.getStockStatus();
+        if (currentStatus != StockStatus.AVAILABLE) {
+            registerStockAlert(product, currentStatus, product.getCurrentStock());
+        }
+    }
+
+    private void handleStockStatusTransition(Product product,
+                                             StockStatus previousStatus,
+                                             BigDecimal currentStock) {
+        StockStatus currentStatus = StockStatus.from(currentStock, product.getMinimumStock());
+
+        if (previousStatus == currentStatus || currentStatus == StockStatus.AVAILABLE) {
+            return;
+        }
+
+        registerStockAlert(product, currentStatus, currentStock);
+    }
+
+    private void registerStockAlert(Product product,
+                                    StockStatus currentStatus,
+                                    BigDecimal currentStock) {
+        StockNotificationType notificationType = currentStatus == StockStatus.OUT_OF_STOCK
+                ? StockNotificationType.OUT_OF_STOCK
+                : StockNotificationType.LOW_STOCK;
+
+        String title = currentStatus == StockStatus.OUT_OF_STOCK
+                ? "Producto agotado"
+                : "Existencia baja";
+
+        String message = currentStatus == StockStatus.OUT_OF_STOCK
+                ? "El producto " + product.getName() + " se encuentra agotado."
+                : "El producto " + product.getName() + " tiene " + currentStock
+                + " unidades y su mínimo es " + product.getMinimumStock() + ".";
+
+        if (!notifications.existsByProductIdAndNotificationTypeAndIsReadFalse(
+                product.getId(),
+                notificationType
+        )) {
+            notifications.save(new StockNotification(
+                    product,
+                    notificationType,
+                    title,
+                    message
+            ));
+        }
+
+        events.publishEvent(new StockAlertEmailEvent(
+                notificationType,
+                product.getId(),
+                product.getCode(),
+                product.getName(),
+                currentStock,
+                product.getMinimumStock()
+        ));
     }
 
     private StockNotificationType normalizeNotificationType(String value) {

@@ -222,6 +222,37 @@ export interface StockEntry {
   updatedAt: string;
 }
 
+export interface SupplierPriceComparisonItem {
+  supplierId: number;
+  supplierName: string;
+  supplierNit: string | null;
+  latestUnitCost: number;
+  averageUnitCost: number;
+  minimumUnitCost: number;
+  maximumUnitCost: number;
+  purchaseCount: number;
+  lastPurchaseDate: string;
+  differenceFromBest: number;
+  percentageAboveBest: number;
+  recommended: boolean;
+}
+
+export interface SupplierPriceComparison {
+  productId: number;
+  productCode: string;
+  productName: string;
+  currentPurchasePrice: number;
+  suppliersCompared: number;
+  recommendedSupplierId: number | null;
+  recommendedSupplierName: string | null;
+  recommendedUnitCost: number | null;
+  highestUnitCost: number | null;
+  savingsPerUnit: number;
+  savingsPercentage: number;
+  recommendation: string;
+  suppliers: SupplierPriceComparisonItem[];
+}
+
 export interface StockEntrySearchParams {
   supplierId?: number | null;
   fromDate?: string;
@@ -268,6 +299,73 @@ export interface Sale {
   notes: string | null;
   items: SaleItem[];
   createdAt: string;
+}
+
+export interface SaleDetailItem {
+  id: number;
+  productId: number;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface SaleDetail {
+  id: number;
+  saleNumber: string;
+  saleDate: string;
+  soldById: number;
+  soldByEmail: string;
+  paymentMethod: 'EFECTIVO';
+  status: 'COMPLETED' | 'CANCELLED';
+  differentProducts: number;
+  totalUnits: number;
+  subtotalAmount: number;
+  totalAmount: number;
+  cashReceived: number;
+  changeAmount: number;
+  notes: string | null;
+  items: SaleDetailItem[];
+  createdAt: string;
+}
+
+export interface SaleReceiptItem {
+  productId: number;
+  productCode: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+}
+
+export interface SaleReceipt {
+  storeName: string;
+  documentTitle: string;
+  saleId: number;
+  saleNumber: string;
+  saleDate: string;
+  soldByEmail: string;
+  paymentMethod: 'EFECTIVO';
+  subtotalAmount: number;
+  totalAmount: number;
+  cashReceived: number;
+  changeAmount: number;
+  notes: string | null;
+  items: SaleReceiptItem[];
+}
+
+export interface OperatingHoursStatus {
+  enabled: boolean;
+  timeZone: string;
+  openingTime: string;
+  closingTime: string;
+  currentDate: string;
+  currentTime: string;
+  role: 'ADMIN' | 'EMPLOYEE';
+  employeeRestricted: boolean;
+  operationAllowed: boolean;
+  message: string;
 }
 
 export interface SaleSearchParams {
