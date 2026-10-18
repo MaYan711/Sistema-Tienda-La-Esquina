@@ -1,0 +1,10 @@
+.git
+.github
+.gradle
+build
+.idea
+.vscode
+.env
+*.log
+login-response.json
+enable-2fa-response.json
