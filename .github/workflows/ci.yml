@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  backend-tests:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: tienda_ci
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tienda_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: jdbc:postgresql://localhost:5432/tienda_ci
+      DATABASE_USERNAME: postgres
+      DATABASE_PASSWORD: postgres
+      SECRET_KEY_JWT: ci-jwt-secret-key-123456789012345678901234567890
+      INITIAL_ADMIN_EMAIL: admin@ci.local
+      INITIAL_ADMIN_PASSWORD: AdminCI2026
+      MAIL_USERNAME: ci@example.com
+      MAIL_PASSWORD: ci-test-password
+      MAIL_FROM: ci@example.com
+      OPERATING_HOURS_TIME_ZONE: America/Guatemala
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Configure Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: |
+            backend/*.gradle*
+            backend/gradle/wrapper/gradle-wrapper.properties
+
+      - name: Grant Gradle permission
+        working-directory: backend
+        run: chmod +x gradlew
+
+      - name: Run backend tests
+        working-directory: backend
+        run: ./gradlew clean test --no-daemon
+
+  frontend-build:
+    name: Frontend build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Configure Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Angular
+        working-directory: frontend
+        run: npm run build
