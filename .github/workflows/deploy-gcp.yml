@@ -3,7 +3,6 @@ name: Deploy GCP
 on:
   push:
     branches:
-      - feature/despliegue-gcp
       - develop
       - main
 
