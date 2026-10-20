@@ -49,7 +49,7 @@ public class ProductController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
     @Operation(summary = "Listar y filtrar productos",
-            description = "Permite buscar por código o nombre y filtrar por categoría, estado activo y estado de inventario")
+            description = "Permite buscar por código, código de barras o nombre y filtrar por categoría, estado activo y estado de inventario")
     public Page<ProductResponse> search(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long categoryId,
@@ -74,6 +74,13 @@ public class ProductController {
         );
 
         return products.search(search, categoryId, active, stockStatus, pageable);
+    }
+
+    @GetMapping("/by-barcode")
+    @PreAuthorize("hasAnyRole('ADMIN','EMPLOYEE')")
+    @Operation(summary = "Buscar producto por codigo de barras")
+    public ProductResponse getByBarcode(@RequestParam String barcode) {
+        return products.getByBarcode(barcode);
     }
 
     @GetMapping("/{id}")

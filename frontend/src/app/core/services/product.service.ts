@@ -33,6 +33,11 @@ export class ProductService {
     return this.http.get<Product>(`${this.url}/${id}`);
   }
 
+  getByBarcode(barcode: string): Observable<Product> {
+    const params = new HttpParams().set('barcode', barcode.trim());
+    return this.http.get<Product>(`${this.url}/by-barcode`, { params });
+  }
+
   create(request: CreateProductRequest): Observable<Product> {
     return this.http.post<Product>(this.url, request);
   }

@@ -60,6 +60,7 @@ public class ProductService {
             specification = specification.and((root, query, cb) ->
                     cb.or(
                             cb.like(cb.lower(root.get("code")), pattern),
+                            cb.like(cb.lower(root.get("barcode")), pattern),
                             cb.like(cb.lower(root.get("name")), pattern)
                     )
             );
@@ -109,14 +110,39 @@ public class ProductService {
         return toResponse(requireProduct(id));
     }
 
+    @Transactional(readOnly = true)
+    public ProductResponse getByBarcode(String barcode) {
+        String normalizedBarcode = normalizeRequired(barcode);
+        if (normalizedBarcode.isEmpty()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "product_barcode_required",
+                    "Codigo de barras requerido",
+                    "Debe indicar un codigo de barras"
+            );
+        }
+
+        return products.findByBarcodeAndActiveTrue(normalizedBarcode)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND,
+                        "product_barcode_not_found",
+                        "Producto no encontrado",
+                        "No existe un producto activo con el codigo de barras indicado"
+                ));
+    }
+
     @Transactional
     public ProductResponse create(CreateProductRequest request, String actorEmail) {
         String code = normalizeRequired(request.code());
+        String barcode = normalizeNullable(request.barcode());
         String name = normalizeRequired(request.name());
 
         if (products.existsByCodeIgnoreCaseAndActiveTrue(code)) {
             throw duplicateCode(code);
         }
+
+        ensureBarcodeAvailable(barcode, null);
 
         ProductCategory category = requireActiveCategory(request.categoryId());
         MeasurementUnit unit = requireActiveUnit(request.unitId());
@@ -124,6 +150,7 @@ public class ProductService {
 
         Product product = new Product(
                 code,
+                barcode,
                 name,
                 normalizeNullable(request.description()),
                 normalizeNullable(request.imageUrl()),
@@ -145,11 +172,14 @@ public class ProductService {
     public ProductResponse update(Long id, UpdateProductRequest request, String actorEmail) {
         Product product = requireProduct(id);
         String code = normalizeRequired(request.code());
+        String barcode = normalizeNullable(request.barcode());
         String name = normalizeRequired(request.name());
 
         if (products.existsByCodeIgnoreCaseAndActiveTrueAndIdNot(code, id)) {
             throw duplicateCode(code);
         }
+
+        ensureBarcodeAvailable(barcode, id);
 
         ProductCategory category = requireActiveCategory(request.categoryId());
         MeasurementUnit unit = requireActiveUnit(request.unitId());
@@ -158,6 +188,7 @@ public class ProductService {
 
         product.updateCatalogData(
                 code,
+                barcode,
                 name,
                 normalizeNullable(request.description()),
                 normalizeNullable(request.imageUrl()),
@@ -280,6 +311,25 @@ public class ProductService {
         return normalized.isEmpty() ? null : normalized;
     }
 
+    private void ensureBarcodeAvailable(String barcode, Long currentId) {
+        if (barcode == null) {
+            return;
+        }
+
+        boolean duplicated = currentId == null
+                ? products.existsByBarcode(barcode)
+                : products.existsByBarcodeAndIdNot(barcode, currentId);
+
+        if (duplicated) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "product_barcode_already_exists",
+                    "Codigo de barras duplicado",
+                    "Ya existe un producto con el codigo de barras " + barcode
+            );
+        }
+    }
+
     private ApiException duplicateCode(String code) {
         return new ApiException(
                 HttpStatus.CONFLICT,
@@ -296,6 +346,7 @@ public class ProductService {
         return new ProductResponse(
                 product.getId(),
                 product.getCode(),
+                product.getBarcode(),
                 product.getName(),
                 product.getDescription(),
                 product.getImageUrl(),

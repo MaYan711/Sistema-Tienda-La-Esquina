@@ -16,11 +16,12 @@ import { CatalogService } from '../../../core/services/catalog.service';
 import { InventoryService } from '../../../core/services/inventory.service';
 import { ProductService } from '../../../core/services/product.service';
 import { FormFeedbackComponent } from '../../../shared/components/form-feedback/form-feedback';
+import { BarcodeScannerComponent } from '../../../shared/components/barcode-scanner/barcode-scanner';
 import { PageHeadingComponent } from '../../../shared/components/page-heading/page-heading';
 
 @Component({
   selector: 'app-products-page',
-  imports: [DecimalPipe, FormFeedbackComponent, PageHeadingComponent, ReactiveFormsModule, TranslocoPipe],
+  imports: [BarcodeScannerComponent, DecimalPipe, FormFeedbackComponent, PageHeadingComponent, ReactiveFormsModule, TranslocoPipe],
   templateUrl: './products.html',
   styleUrl: './products.scss',
 })
@@ -47,6 +48,7 @@ export class ProductsPageComponent implements OnInit {
   readonly selectedProduct = signal<Product | null>(null);
   readonly productModalOpen = signal(false);
   readonly adjustmentModalOpen = signal(false);
+  readonly barcodeScannerOpen = signal(false);
 
   readonly filters = this.fb.group({
     search: [''],
@@ -56,6 +58,7 @@ export class ProductsPageComponent implements OnInit {
 
   readonly productForm = this.fb.nonNullable.group({
     code: ['', [Validators.required, Validators.maxLength(64)]],
+    barcode: ['', [Validators.maxLength(128)]],
     name: ['', [Validators.required, Validators.maxLength(160)]],
     description: [''],
     imageUrl: [''],
@@ -163,6 +166,7 @@ export class ProductsPageComponent implements OnInit {
     this.selectedProduct.set(null);
     this.productForm.reset({
       code: '',
+      barcode: '',
       name: '',
       description: '',
       imageUrl: '',
@@ -181,6 +185,7 @@ export class ProductsPageComponent implements OnInit {
     this.selectedProduct.set(product);
     this.productForm.reset({
       code: product.code,
+      barcode: product.barcode ?? '',
       name: product.name,
       description: product.description ?? '',
       imageUrl: product.imageUrl ?? '',
@@ -196,6 +201,7 @@ export class ProductsPageComponent implements OnInit {
   }
 
   closeProductModal(): void {
+    this.barcodeScannerOpen.set(false);
     this.productModalOpen.set(false);
     this.selectedProduct.set(null);
   }
@@ -212,6 +218,7 @@ export class ProductsPageComponent implements OnInit {
     const request$ = current
       ? this.productsApi.update(current.id, {
           code: raw.code.trim(),
+          barcode: raw.barcode.trim() || null,
           name: raw.name.trim(),
           description: raw.description.trim() || null,
           imageUrl: raw.imageUrl.trim() || null,
@@ -223,6 +230,7 @@ export class ProductsPageComponent implements OnInit {
         })
       : this.productsApi.create({
           code: raw.code.trim(),
+          barcode: raw.barcode.trim() || null,
           name: raw.name.trim(),
           description: raw.description.trim() || null,
           imageUrl: raw.imageUrl.trim() || null,
@@ -242,6 +250,21 @@ export class ProductsPageComponent implements OnInit {
       },
       error: (error: unknown) => this.errorMessage.set(this.errors.getMessage(error)),
     });
+  }
+
+
+  openBarcodeScanner(): void {
+    this.barcodeScannerOpen.set(true);
+  }
+
+  closeBarcodeScanner(): void {
+    this.barcodeScannerOpen.set(false);
+  }
+
+  onBarcodeScanned(barcode: string): void {
+    this.productForm.controls.barcode.setValue(barcode);
+    this.barcodeScannerOpen.set(false);
+    this.successMessage.set(`Código de barras detectado: ${barcode}`);
   }
 
   toggleActive(product: Product): void {

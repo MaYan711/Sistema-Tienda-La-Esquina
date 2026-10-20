@@ -8,7 +8,7 @@
 .primary-button--compact, .secondary-button--compact {min-height: 2.65rem; width: auto;}
 .data-panel {background: var(--surface); border: 1px solid var(--line); border-radius: 1.1rem; overflow: hidden;}
 .table-scroll {overflow-x: auto;}
-.store-table {border-collapse: collapse; min-width: 61rem; width: 100%;}
+.store-table {border-collapse: collapse; min-width: 70rem; width: 100%;}
 .store-table th {background: #f4efe4; color: var(--muted); font-size: .64rem; letter-spacing: .07em; padding: .8rem; text-align: left; text-transform: uppercase;}
 .store-table td {border-top: 1px solid var(--line); color: var(--ink); font-size: .76rem; padding: .75rem .8rem; vertical-align: middle;}
 .store-table code {color: var(--muted); font-family: inherit; font-size: .72rem;}
@@ -42,3 +42,13 @@
 .adjustment-summary span {color: var(--muted); font-size: .72rem;}
 @media (max-width: 900px) {.filters-panel {grid-template-columns: 1fr 1fr;} .filter-actions {align-items: stretch;}}
 @media (max-width: 600px) {.page-toolbar {align-items: stretch; flex-direction: column;} .filters-panel, .form-grid {grid-template-columns: 1fr;} .full-field {grid-column: auto;} .table-footer {align-items: flex-start; flex-direction: column; gap: .8rem;}}
+
+.barcode-field > div {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr auto;
+}
+.barcode-field button {white-space: nowrap;}
+@media (max-width: 600px) {
+  .barcode-field > div {grid-template-columns: 1fr;}
+}

@@ -40,6 +40,7 @@ export interface MeasurementUnit {
 export interface Product {
   id: number;
   code: string;
+  barcode: string | null;
   name: string;
   description: string | null;
   imageUrl: string | null;
@@ -68,6 +69,7 @@ export interface ProductSearchParams {
 
 export interface CreateProductRequest {
   code: string;
+  barcode: string | null;
   name: string;
   description: string | null;
   imageUrl: string | null;
@@ -81,6 +83,7 @@ export interface CreateProductRequest {
 
 export interface UpdateProductRequest {
   code: string;
+  barcode: string | null;
   name: string;
   description: string | null;
   imageUrl: string | null;
@@ -147,7 +150,7 @@ export interface StockNotification {
 export interface Supplier {
   id: number;
   name: string;
-  nit: string;
+  nit: string | null;
   phone: string | null;
   email: string | null;
   address: string | null;
@@ -167,7 +170,7 @@ export interface SupplierSearchParams {
 
 export interface CreateSupplierRequest {
   name: string;
-  nit: string;
+  nit: string | null;
   phone: string | null;
   email: string | null;
   address: string | null;
@@ -175,7 +178,7 @@ export interface CreateSupplierRequest {
 
 export interface UpdateSupplierRequest {
   name: string;
-  nit: string;
+  nit: string | null;
   phone: string | null;
   email: string | null;
   address: string | null;

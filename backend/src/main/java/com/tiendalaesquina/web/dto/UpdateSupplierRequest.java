@@ -2,6 +2,7 @@ package com.tiendalaesquina.web.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record UpdateSupplierRequest(
@@ -10,10 +11,10 @@ public record UpdateSupplierRequest(
         @Size(max = 160)
         String name,
 
-        @Size(max = 32)
+        @Pattern(regexp = "^\\d{9}$", message = "El NIT debe contener exactamente 9 digitos")
         String nit,
 
-        @Size(max = 32)
+        @Pattern(regexp = "^\\d{8}$", message = "El telefono debe contener exactamente 8 digitos")
         String phone,
 
         @Email
