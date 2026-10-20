@@ -70,13 +70,25 @@
           <label>
             <span>Buscar producto</span>
 
-            <input
-              type="search"
-              formControlName="search"
-              placeholder="Código o nombre del producto"
-              autocomplete="off"
-              [disabled]="!canRegisterSale()"
-            />
+            <div class="product-search-input-row">
+              <input
+                type="search"
+                formControlName="search"
+                placeholder="Código, barras o nombre del producto"
+                autocomplete="off"
+                [disabled]="!canRegisterSale()"
+              />
+
+              <button
+                class="secondary-button secondary-button--compact scan-button"
+                type="button"
+                [disabled]="!canRegisterSale() || barcodeLookupLoading()"
+                (click)="openBarcodeScanner()"
+              >
+                <i [class]="barcodeLookupLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-camera'"></i>
+                Escanear
+              </button>
+            </div>
           </label>
 
           @if (searchingProducts()) {
@@ -904,3 +916,11 @@
   </section>
 }
 
+
+
+@if (barcodeScannerOpen()) {
+  <app-barcode-scanner
+    (scanned)="onBarcodeScanned($event)"
+    (closed)="closeBarcodeScanner()"
+  />
+}

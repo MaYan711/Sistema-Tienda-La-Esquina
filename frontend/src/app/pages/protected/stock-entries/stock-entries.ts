@@ -22,6 +22,7 @@ import { StockEntryService } from '../../../core/services/stock-entry.service';
 import { SupplierService } from '../../../core/services/supplier.service';
 
 import { FormFeedbackComponent } from '../../../shared/components/form-feedback/form-feedback';
+import { BarcodeScannerComponent } from '../../../shared/components/barcode-scanner/barcode-scanner';
 import { PageHeadingComponent } from '../../../shared/components/page-heading/page-heading';
 
 interface PendingEntryItem {
@@ -37,6 +38,7 @@ interface PendingEntryItem {
     DatePipe,
     DecimalPipe,
     ReactiveFormsModule,
+    BarcodeScannerComponent,
     FormFeedbackComponent,
     PageHeadingComponent,
   ],
@@ -56,6 +58,8 @@ readonly suppliers = signal<Supplier[]>([]);
 readonly productResults = signal<Product[]>([]);
 readonly selectedProduct = signal<Product | null>(null);
 readonly selectedItems = signal<PendingEntryItem[]>([]);
+readonly barcodeScannerOpen = signal(false);
+readonly barcodeLookupLoading = signal(false);
 
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -324,6 +328,35 @@ readonly selectedItems = signal<PendingEntryItem[]>([]);
   this.selectedItems.set([]);
   this.productResults.set([]);
 }
+
+
+  openBarcodeScanner(): void {
+    this.errorMessage.set(null);
+    this.barcodeScannerOpen.set(true);
+  }
+
+  closeBarcodeScanner(): void {
+    this.barcodeScannerOpen.set(false);
+  }
+
+  onBarcodeScanned(barcode: string): void {
+    this.barcodeScannerOpen.set(false);
+    this.barcodeLookupLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.productsApi
+      .getByBarcode(barcode)
+      .pipe(finalize(() => this.barcodeLookupLoading.set(false)))
+      .subscribe({
+        next: (product) => {
+          this.selectProduct(product);
+          this.successMessage.set(`Producto identificado: ${product.name}.`);
+        },
+        error: (error: unknown) => {
+          this.errorMessage.set(this.errors.getMessage(error));
+        },
+      });
+  }
 
   selectProduct(product: Product): void {
     this.selectedProduct.set(product);

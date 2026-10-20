@@ -26,6 +26,9 @@ public class Product {
     @Column(nullable = false, length = 64)
     private String code;
 
+    @Column(length = 128)
+    private String barcode;
+
     @Column(nullable = false, length = 160)
     private String name;
 
@@ -79,7 +82,16 @@ public class Product {
                    ProductCategory category, MeasurementUnit unit, BigDecimal purchasePrice,
                    BigDecimal salePrice, BigDecimal currentStock, BigDecimal minimumStock,
                    UserAccount actor) {
+        this(code, null, name, description, imageUrl, category, unit, purchasePrice, salePrice,
+                currentStock, minimumStock, actor);
+    }
+
+    public Product(String code, String barcode, String name, String description, String imageUrl,
+                   ProductCategory category, MeasurementUnit unit, BigDecimal purchasePrice,
+                   BigDecimal salePrice, BigDecimal currentStock, BigDecimal minimumStock,
+                   UserAccount actor) {
         this.code = code;
+        this.barcode = barcode;
         this.name = name;
         this.description = description;
         this.imageUrl = imageUrl;
@@ -112,6 +124,10 @@ public class Product {
 
     public String getCode() {
         return code;
+    }
+
+    public String getBarcode() {
+        return barcode;
     }
 
     public String getName() {
@@ -166,17 +182,18 @@ public class Product {
         return StockStatus.from(currentStock, minimumStock);
     }
 
-    public void updateCatalogData(String code, String name, String description, String imageUrl,
+    public void updateCatalogData(String code, String barcode, String name, String description, String imageUrl,
                                   ProductCategory category, MeasurementUnit unit,
                                   BigDecimal purchasePrice, BigDecimal salePrice,
                                   BigDecimal minimumStock, UserAccount actor) {
         this.code = code;
+        this.barcode = barcode;
         this.name = name;
         this.description = description;
         this.imageUrl = imageUrl;
         this.category = category;
         this.unit = unit;
-        this.purchasePrice = purchasePrice;;
+        this.purchasePrice = purchasePrice;
         this.salePrice = salePrice;
         this.minimumStock = minimumStock;
         this.updatedBy = actor;

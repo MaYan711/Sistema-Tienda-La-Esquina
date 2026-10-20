@@ -13,7 +13,7 @@
 <form class="filters-panel" [formGroup]="filters" (ngSubmit)="applyFilters()">
   <label>
     <span>{{ 'products.filters.search' | transloco }}</span>
-    <input type="search" formControlName="search" placeholder="Código o nombre" />
+    <input type="search" formControlName="search" placeholder="Código, código de barras o nombre" />
   </label>
   <label>
     <span>{{ 'products.filters.category' | transloco }}</span>
@@ -50,6 +50,7 @@
           <tr>
             <th>Producto</th>
             <th>Código</th>
+            <th>Código de barras</th>
             <th>Categoría</th>
             <th>Stock</th>
             <th>Compra</th>
@@ -74,6 +75,7 @@
                 </div>
               </td>
               <td><code>{{ product.code }}</code></td>
+              <td><code>{{ product.barcode || 'Sin asignar' }}</code></td>
               <td>{{ product.category.name }}</td>
               <td><strong>{{ product.currentStock | number:'1.0-3' }}</strong></td>
               <td>Q {{ product.purchasePrice | number:'1.2-2' }}</td>
@@ -110,7 +112,17 @@
     <header><div><span>Catálogo</span><h2>{{ selectedProduct() ? 'Editar producto' : 'Nuevo producto' }}</h2></div><button type="button" (click)="closeProductModal()"><i class="pi pi-times"></i></button></header>
     <form class="modal-form" [formGroup]="productForm" (ngSubmit)="saveProduct()">
       <div class="form-grid">
-        <label><span>Código</span><input formControlName="code" /></label>
+        <label><span>Código interno</span><input formControlName="code" /></label>
+        <label class="barcode-field">
+          <span>Código de barras</span>
+          <div>
+            <input formControlName="barcode" inputmode="numeric" placeholder="Escanea o escribe el código" />
+            <button class="secondary-button secondary-button--compact" type="button" (click)="openBarcodeScanner()">
+              <i class="pi pi-camera"></i>
+              Escanear
+            </button>
+          </div>
+        </label>
         <label><span>Nombre</span><input formControlName="name" /></label>
         <label><span>Categoría</span><select formControlName="categoryId">@for (category of categories(); track category.id) {<option [value]="category.id">{{ category.name }}</option>}</select></label>
         <label><span>Unidad</span><select formControlName="unitId">@for (unit of units(); track unit.id) {<option [value]="unit.id">{{ unit.name }}</option>}</select></label>
@@ -139,4 +151,12 @@
       </form>
     </section>
   }
+}
+
+
+@if (barcodeScannerOpen()) {
+  <app-barcode-scanner
+    (scanned)="onBarcodeScanned($event)"
+    (closed)="closeBarcodeScanner()"
+  />
 }

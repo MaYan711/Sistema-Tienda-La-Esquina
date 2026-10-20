@@ -725,3 +725,14 @@
     text-align: left;
   }
 }
+
+.product-search-input-row {
+  align-items: stretch;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.scan-button {white-space: nowrap;}
+@media (max-width: 560px) {
+  .product-search-input-row {grid-template-columns: 1fr;}
+}

@@ -274,16 +274,32 @@
         <span>NIT</span>
         <input
           formControlName="nit"
-          placeholder="Ej. 548796-2"
+          inputmode="numeric"
+          maxlength="9"
+          placeholder="Ej. 123456789"
         />
+
+        @if (supplierForm.controls.nit.invalid && supplierForm.controls.nit.touched) {
+          <small class="field-error">
+            El NIT debe contener exactamente 9 dígitos y solo números.
+          </small>
+        }
       </label>
 
       <label>
         <span>Teléfono</span>
         <input
           formControlName="phone"
-          placeholder="Ej. 7765-1122"
+          inputmode="numeric"
+          maxlength="8"
+          placeholder="Ej. 77651122"
         />
+
+        @if (supplierForm.controls.phone.invalid && supplierForm.controls.phone.touched) {
+          <small class="field-error">
+            El teléfono debe contener exactamente 8 dígitos y solo números.
+          </small>
+        }
       </label>
 
       <label>

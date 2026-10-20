@@ -33,6 +33,7 @@ import { SaleReceiptExportService } from '../../../core/services/sale-receipt-ex
 import { SaleService } from '../../../core/services/sale.service';
 
 import { FormFeedbackComponent } from '../../../shared/components/form-feedback/form-feedback';
+import { BarcodeScannerComponent } from '../../../shared/components/barcode-scanner/barcode-scanner';
 import { PageHeadingComponent } from '../../../shared/components/page-heading/page-heading';
 
 interface PendingSaleItem {
@@ -48,6 +49,7 @@ interface PendingSaleItem {
     DatePipe,
     DecimalPipe,
     ReactiveFormsModule,
+    BarcodeScannerComponent,
     FormFeedbackComponent,
     PageHeadingComponent,
   ],
@@ -76,6 +78,8 @@ export class SalesPageComponent implements OnInit {
   readonly detailLoading = signal(false);
   readonly saleDetail = signal<SaleDetail | null>(null);
   readonly operatingHours = signal<OperatingHoursStatus | null>(null);
+  readonly barcodeScannerOpen = signal(false);
+  readonly barcodeLookupLoading = signal(false);
 
   readonly errorMessage = signal<string | null>(null);
   readonly successMessage = signal<string | null>(null);
@@ -262,6 +266,43 @@ export class SalesPageComponent implements OnInit {
       });
   }
 
+
+  openBarcodeScanner(): void {
+    if (!this.canRegisterSale()) {
+      return;
+    }
+    this.errorMessage.set(null);
+    this.barcodeScannerOpen.set(true);
+  }
+
+  closeBarcodeScanner(): void {
+    this.barcodeScannerOpen.set(false);
+  }
+
+  onBarcodeScanned(barcode: string): void {
+    this.barcodeScannerOpen.set(false);
+    this.barcodeLookupLoading.set(true);
+    this.errorMessage.set(null);
+
+    this.productsApi
+      .getByBarcode(barcode)
+      .pipe(finalize(() => this.barcodeLookupLoading.set(false)))
+      .subscribe({
+        next: (product) => {
+          if (Number(product.currentStock) <= 0) {
+            this.errorMessage.set(`El producto ${product.name} no tiene existencias disponibles.`);
+            return;
+          }
+
+          this.selectProduct(product);
+          this.successMessage.set(`Producto identificado: ${product.name}.`);
+        },
+        error: (error: unknown) => {
+          this.errorMessage.set(this.errors.getMessage(error));
+        },
+      });
+  }
+
   selectProduct(product: Product): void {
   this.errorMessage.set(null);
   this.successMessage.set(null);
@@ -290,7 +331,7 @@ export class SalesPageComponent implements OnInit {
 
     if (!raw.productId || raw.quantity <= 0) {
       this.errorMessage.set(
-        'Selecciona un producto e ingresa una cantidad válida.',
+        'Selecciona un producto e ingresa una cantidad vÃ¡lida.',
       );
       return;
     }
@@ -582,7 +623,7 @@ export class SalesPageComponent implements OnInit {
 
     if (!this.receiptExport.print(receipt)) {
       this.errorMessage.set(
-        'El navegador bloqueó la ventana de impresión. Habilita las ventanas emergentes e intenta nuevamente.',
+        'El navegador bloqueÃ³ la ventana de impresiÃ³n. Habilita las ventanas emergentes e intenta nuevamente.',
       );
     }
   }

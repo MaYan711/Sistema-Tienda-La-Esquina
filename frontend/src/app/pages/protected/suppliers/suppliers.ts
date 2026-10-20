@@ -46,8 +46,8 @@ export class SuppliersPageComponent implements OnInit {
 
   readonly supplierForm = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(160)]],
-    nit: ['', [Validators.maxLength(32)]],
-    phone: ['', [Validators.maxLength(32)]],
+    nit: ['', [Validators.pattern(/^\d{9}$/)]],
+    phone: ['', [Validators.pattern(/^\d{8}$/)]],
     email: ['', [Validators.email, Validators.maxLength(160)]],
     address: ['', [Validators.maxLength(255)]],
   });
@@ -184,7 +184,7 @@ export class SuppliersPageComponent implements OnInit {
 
     const request = {
       name: raw.name.trim(),
-      nit: raw.nit.trim(),
+      nit: raw.nit.trim() || null,
       phone: raw.phone.trim() || null,
       email: raw.email.trim() || null,
       address: raw.address.trim() || null,
