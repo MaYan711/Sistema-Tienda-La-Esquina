@@ -1,0 +1,85 @@
+<app-page-heading eyebrowKey="movements.eyebrow" titleKey="movements.title" descriptionKey="movements.description" />
+<app-form-feedback [message]="errorMessage()" />
+
+<form class="movement-filters" [formGroup]="filters" (ngSubmit)="applyFilters()">
+  <label class="product-search-field">
+    <span>Producto</span>
+    <div class="search-input-wrap">
+      <i class="pi pi-search"></i>
+      <input
+        type="search"
+        formControlName="productSearch"
+        placeholder="Código o nombre del producto"
+        autocomplete="off"
+        (focus)="searchFocused.set(true)"
+      />
+      @if (filters.controls.productSearch.value) {
+        <button type="button" class="search-clear" title="Limpiar producto" (click)="clearProductSearch()">
+          <i class="pi pi-times"></i>
+        </button>
+      }
+    </div>
+
+    @if (searchFocused() && (productMatches().length > 0 || productSearchLoading())) {
+      <div class="product-suggestions">
+        @if (productSearchLoading()) {
+          <div class="suggestion-state"><i class="pi pi-spin pi-spinner"></i> Buscando...</div>
+        } @else {
+          @for (product of productMatches(); track product.id) {
+            <button type="button" class="product-suggestion" (mousedown)="$event.preventDefault()" (click)="selectProduct(product)">
+              <span class="suggestion-image">
+                @if (product.imageUrl) { <img [src]="product.imageUrl" [alt]="product.name" /> }
+                @else { <i class="pi pi-box"></i> }
+              </span>
+              <span><strong>{{ product.name }}</strong><small>{{ product.code }} · {{ product.category.name }}</small></span>
+              <em>Stock {{ product.currentStock | number:'1.0-3' }}</em>
+            </button>
+          }
+        }
+      </div>
+    }
+  </label>
+
+  <label>
+    <span>Tipo</span>
+    <select formControlName="movementType">
+      <option value="">Todos</option>
+      <option value="ADJUSTMENT">Ajuste</option>
+      <option value="STOCK_ENTRY">Entrada</option>
+      <option value="SALE">Venta</option>
+    </select>
+  </label>
+
+  <button class="primary-button primary-button--inline" type="submit">Aplicar filtros</button>
+</form>
+
+<section class="movement-panel">
+  @if (loading()) {
+    <div class="movement-empty"><i class="pi pi-spin pi-spinner"></i> Cargando movimientos...</div>
+  } @else if (movements().length === 0) {
+    <div class="movement-empty">No hay movimientos registrados.</div>
+  } @else {
+    <div class="movement-scroll">
+      <table>
+        <thead>
+          <tr><th>Producto</th><th>Tipo</th><th>Antes</th><th>Cambio</th><th>Después</th><th>Motivo</th><th>Usuario</th><th>Fecha y hora</th></tr>
+        </thead>
+        <tbody>
+          @for (movement of movements(); track movement.id) {
+            <tr>
+              <td><strong>{{ movement.productName }}</strong><small>{{ movement.productCode }}</small></td>
+              <td><span class="movement-type">{{ movementLabel(movement.movementType) }}</span></td>
+              <td>{{ movement.quantityBefore | number:'1.0-3' }}</td>
+              <td [class.negative]="movement.quantityDelta < 0" [class.positive]="movement.quantityDelta > 0">{{ movement.quantityDelta > 0 ? '+' : '' }}{{ movement.quantityDelta | number:'1.0-3' }}</td>
+              <td><strong>{{ movement.quantityAfter | number:'1.0-3' }}</strong></td>
+              <td>{{ movement.reason || '—' }}</td>
+              <td>{{ movement.createdByEmail }}</td>
+              <td>{{ formatGuatemalaDate(movement.createdAt) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+<footer class="movement-pagination"><span>{{ totalElements() }} movimientos</span><div><button [disabled]="page() === 0" (click)="previousPage()"><i class="pi pi-chevron-left"></i></button><span>Página {{ page() + 1 }} de {{ totalPages() || 1 }}</span><button [disabled]="page() + 1 >= totalPages()" (click)="nextPage()"><i class="pi pi-chevron-right"></i></button></div></footer>

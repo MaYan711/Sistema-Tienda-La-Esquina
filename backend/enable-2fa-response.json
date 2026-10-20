@@ -1,0 +1,1 @@
+{"detail":"No fue posible enviar el correo de verificación","instance":"/api/v1/auth/2fa/enable","status":503,"title":"Servicio de correo no disponible","type":"https://api.ssg.local/problems/email_delivery_failed","code":"email_delivery_failed"}

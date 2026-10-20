@@ -1,0 +1,648 @@
+<div class="page-toolbar">
+  <app-page-heading
+    eyebrowKey="stockEntries.eyebrow"
+    titleKey="stockEntries.title"
+    descriptionKey="stockEntries.description"
+  />
+
+  <div class="toolbar-actions">
+    <button
+      class="secondary-button toolbar-button"
+      type="button"
+      (click)="openComparison()"
+    >
+      <i class="pi pi-chart-bar"></i>
+      <span>Comparar proveedores</span>
+    </button>
+
+    <button
+      class="primary-button primary-button--inline"
+      type="button"
+      (click)="openCreate()"
+    >
+      <i class="pi pi-plus"></i>
+      <span>Nueva entrada</span>
+    </button>
+  </div>
+</div>
+
+<app-form-feedback [message]="errorMessage()" />
+<app-form-feedback [message]="successMessage()" tone="success" />
+
+<form class="filters-panel" [formGroup]="filters">
+  <label>
+    <span>Proveedor</span>
+    <select formControlName="supplierId">
+      <option value="">Todos</option>
+
+      @for (supplier of suppliers(); track supplier.id) {
+        <option [value]="supplier.id">
+          {{ supplier.name }}
+        </option>
+      }
+    </select>
+  </label>
+
+  <label>
+    <span>Factura o referencia</span>
+    <input
+      type="search"
+      formControlName="reference"
+      placeholder="Ej. FAC-001582"
+    />
+  </label>
+
+  <label>
+    <span>Desde</span>
+    <input type="date" formControlName="fromDate" />
+  </label>
+
+  <label>
+    <span>Hasta</span>
+    <input type="date" formControlName="toDate" />
+  </label>
+
+  <div class="filter-actions">
+    <button
+      class="secondary-button secondary-button--compact"
+      type="button"
+      (click)="clearFilters()"
+    >
+      Limpiar
+    </button>
+
+    <button
+      class="primary-button primary-button--compact"
+      type="button"
+      (click)="loadEntries(0)"
+    >
+      Buscar
+    </button>
+  </div>
+</form>
+
+<section class="data-panel">
+  @if (loading()) {
+    <div class="table-state">
+      <i class="pi pi-spin pi-spinner"></i>
+      Cargando entradas...
+    </div>
+  } @else if (entries().length === 0) {
+    <div class="table-state">
+      No se encontraron entradas de mercadería.
+    </div>
+  } @else {
+    <div class="table-scroll">
+      <table class="store-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Proveedor</th>
+            <th>Documento</th>
+            <th>Productos</th>
+            <th>Total</th>
+            <th>Registrado por</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          @for (entry of entries(); track entry.id) {
+            <tr>
+              <td>
+                <code>#{{ entry.id }}</code>
+              </td>
+
+              <td>{{ entry.entryDate | date: 'dd/MM/yyyy':'America/Guatemala' }}</td>
+
+              <td>
+                <div class="supplier-cell">
+                  <div class="supplier-avatar">
+                    {{ entry.supplierName.charAt(0).toUpperCase() }}
+                  </div>
+
+                  <strong>{{ entry.supplierName }}</strong>
+                </div>
+              </td>
+
+              <td>{{ entry.documentNumber || 'Sin referencia' }}</td>
+
+              <td>{{ entry.items.length }}</td>
+
+              <td>
+                <strong>Q {{ entry.totalAmount | number: '1.2-2' }}</strong>
+              </td>
+
+              <td>{{ entry.createdByEmail }}</td>
+
+              <td>
+                <span class="status-pill status-confirmed">
+                  {{ entry.status === 'CONFIRMED' ? 'Confirmada' : entry.status }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="table-footer">
+      <span>
+        Mostrando {{ pageStart() }}-{{ pageEnd() }}
+        de {{ totalElements() }} entradas
+      </span>
+
+      <div class="pagination-actions">
+        <button
+          type="button"
+          [disabled]="page() === 0"
+          (click)="previousPage()"
+        >
+          <i class="pi pi-chevron-left"></i>
+        </button>
+
+        <span>
+          Página {{ page() + 1 }} de {{ totalPages() || 1 }}
+        </span>
+
+        <button
+          type="button"
+          [disabled]="page() + 1 >= totalPages()"
+          (click)="nextPage()"
+        >
+          <i class="pi pi-chevron-right"></i>
+        </button>
+      </div>
+    </footer>
+  }
+</section>
+
+@if (entryModalOpen()) {
+  <div
+    class="modal-backdrop"
+    (click)="closeCreate()"
+  ></div>
+
+  <section
+    class="store-modal store-modal--wide"
+    role="dialog"
+    aria-modal="true"
+  >
+    <header>
+      <div>
+        <span>Entrada de mercadería</span>
+        <h2>Nueva entrada</h2>
+      </div>
+
+      <button
+        type="button"
+        title="Cerrar"
+        (click)="closeCreate()"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+
+    <form
+      class="entry-form"
+      [formGroup]="entryForm"
+      (ngSubmit)="saveEntry()"
+    >
+      <section class="entry-section">
+        <div class="section-heading">
+          <div>
+            <span>Información general</span>
+            <h3>Datos de la entrada</h3>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Proveedor</span>
+
+            <select formControlName="supplierId">
+              <option [value]="0">Selecciona un proveedor</option>
+
+              @for (supplier of suppliers(); track supplier.id) {
+                <option [value]="supplier.id">
+                  {{ supplier.name }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>Fecha</span>
+            <input type="date" formControlName="entryDate" />
+          </label>
+
+          <label>
+            <span>Factura o referencia</span>
+            <input
+              formControlName="documentNumber"
+              placeholder="Ej. FAC-001582"
+            />
+          </label>
+
+          <label class="full-field">
+            <span>Observaciones</span>
+            <textarea
+              rows="2"
+              formControlName="notes"
+              placeholder="Observaciones opcionales"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="entry-section product-section">
+        <div class="section-heading">
+          <div>
+            <span>Productos recibidos</span>
+            <h3>Agregar productos</h3>
+          </div>
+        </div>
+
+        <div class="product-entry" [formGroup]="productForm">
+          <div class="product-search-field">
+            <label>
+              <span>Producto</span>
+
+              <div class="product-search-input-row">
+                <input
+                  type="search"
+                  formControlName="search"
+                  placeholder="Código, barras o nombre del producto"
+                  autocomplete="off"
+                />
+
+                <button
+                  class="secondary-button secondary-button--compact scan-button"
+                  type="button"
+                  [disabled]="barcodeLookupLoading()"
+                  (click)="openBarcodeScanner()"
+                >
+                  <i [class]="barcodeLookupLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-camera'"></i>
+                  Escanear
+                </button>
+              </div>
+            </label>
+
+            @if (productResults().length > 0) {
+              <div class="search-results">
+                @for (product of productResults(); track product.id) {
+                  <button
+                    type="button"
+                    class="search-result"
+                    (click)="selectProduct(product)"
+                  >
+                    <div>
+                      <strong>{{ product.name }}</strong>
+                      <small>
+                        {{ product.code }} · Stock actual:
+                        {{ product.currentStock }}
+                      </small>
+                    </div>
+
+                    <span>
+                      Q {{ product.purchasePrice | number: '1.2-2' }}
+                    </span>
+                  </button>
+                }
+              </div>
+            }
+          </div>
+
+          <label>
+            <span>Cantidad</span>
+            <input
+              type="number"
+              min="0.001"
+              step="0.001"
+              formControlName="quantity"
+            />
+          </label>
+
+          <label>
+            <span>Costo unitario</span>
+            <div class="currency-input">
+              <span>Q</span>
+              <input
+                type="number"
+                min="0.0001"
+                step="0.01"
+                formControlName="unitCost"
+              />
+            </div>
+          </label>
+
+          <div class="product-action">
+            <button
+              class="primary-button primary-button--compact"
+              type="button"
+              (click)="addProduct()"
+            >
+              <i class="pi pi-plus"></i>
+              Agregar
+            </button>
+          </div>
+        </div>
+
+        @if (selectedItems().length === 0) {
+          <div class="empty-products">
+            Aún no has agregado productos a esta entrada.
+          </div>
+        } @else {
+          <div class="selected-products">
+            <div class="table-scroll">
+              <table class="store-table store-table--products">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Costo U.</th>
+                    <th>Subtotal</th>
+                    <th></th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  @for (item of selectedItems(); track item.product.id) {
+                    <tr>
+                      <td>
+                        <div class="product-cell">
+                          <div class="product-thumb">
+                            @if (item.product.imageUrl) {
+                              <img
+                                [src]="item.product.imageUrl"
+                                [alt]="item.product.name"
+                              />
+                            } @else {
+                              <i class="pi pi-box"></i>
+                            }
+                          </div>
+
+                          <div>
+                            <strong>{{ item.product.name }}</strong>
+                            <small>{{ item.product.code }}</small>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>{{ item.quantity }}</td>
+
+                      <td>Q {{ item.unitCost | number: '1.2-4' }}</td>
+
+                      <td>
+                        <strong>
+                          Q {{ item.lineTotal | number: '1.2-2' }}
+                        </strong>
+                      </td>
+
+                      <td>
+                        <button
+                          class="remove-item"
+                          type="button"
+                          title="Quitar producto"
+                          (click)="removeItem(item.product.id)"
+                        >
+                          <i class="pi pi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            <div class="entry-total">
+              <span>Total de la entrada</span>
+              <strong>Q {{ totalAmount() | number: '1.2-2' }}</strong>
+            </div>
+          </div>
+        }
+      </section>
+
+      <footer class="modal-actions">
+        <button
+          class="secondary-button secondary-button--compact"
+          type="button"
+          (click)="closeCreate()"
+        >
+          Cancelar
+        </button>
+
+        <button
+          class="primary-button primary-button--compact"
+          type="submit"
+          [disabled]="saving()"
+        >
+          <i class="pi pi-check"></i>
+
+          {{
+            saving()
+              ? 'Registrando...'
+              : 'Confirmar entrada'
+          }}
+        </button>
+      </footer>
+    </form>
+  </section>
+}
+
+@if (comparisonModalOpen()) {
+  <div class="modal-backdrop" (click)="closeComparison()"></div>
+
+  <section class="store-modal store-modal--wide comparison-modal">
+    <header>
+      <div>
+        <span>Análisis de compras</span>
+        <h2>Comparar proveedores</h2>
+      </div>
+
+      <button
+        type="button"
+        title="Cerrar"
+        (click)="closeComparison()"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+    </header>
+
+    <p class="comparison-intro">
+      Selecciona un producto para comparar el costo unitario registrado en las entradas de mercadería y conocer qué proveedor ha ofrecido el menor precio reciente.
+    </p>
+
+    <div class="comparison-search" [formGroup]="comparisonForm">
+      <div class="product-search-field">
+        <label>
+          <span>Producto a comparar</span>
+          <input
+            type="search"
+            formControlName="search"
+            placeholder="Código o nombre del producto"
+            autocomplete="off"
+          />
+        </label>
+
+        @if (comparisonResults().length > 0) {
+          <div class="search-results">
+            @for (product of comparisonResults(); track product.id) {
+              <button
+                type="button"
+                class="search-result"
+                (click)="selectComparisonProduct(product)"
+              >
+                <div>
+                  <strong>{{ product.name }}</strong>
+                  <small>{{ product.code }}</small>
+                </div>
+
+                <span>
+                  Costo actual Q {{ product.purchasePrice | number: '1.2-4' }}
+                </span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (comparisonLoading()) {
+      <div class="comparison-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        Analizando historial de compras...
+      </div>
+    } @else if (comparisonData(); as comparison) {
+      <section class="comparison-product">
+        <div>
+          <span>Producto analizado</span>
+          <strong>{{ comparison.productName }}</strong>
+          <small>{{ comparison.productCode }}</small>
+        </div>
+
+        <div>
+          <span>Costo de compra actual</span>
+          <strong>Q {{ comparison.currentPurchasePrice | number: '1.2-4' }}</strong>
+        </div>
+
+        <div>
+          <span>Proveedores comparados</span>
+          <strong>{{ comparison.suppliersCompared }}</strong>
+        </div>
+      </section>
+
+      @if (comparison.suppliers.length === 0) {
+        <div class="comparison-state comparison-state--empty">
+          <i class="pi pi-info-circle"></i>
+          <strong>Sin historial suficiente</strong>
+          <span>{{ comparison.recommendation }}</span>
+        </div>
+      } @else {
+        <section class="recommendation-card">
+          <div class="recommendation-icon">
+            <i class="pi pi-star-fill"></i>
+          </div>
+
+          <div class="recommendation-main">
+            <span>Proveedor recomendado</span>
+            <strong>{{ comparison.recommendedSupplierName }}</strong>
+            <p>{{ comparison.recommendation }}</p>
+          </div>
+
+          <div class="recommendation-price">
+            <span>Mejor costo reciente</span>
+            <strong>Q {{ comparison.recommendedUnitCost | number: '1.2-4' }}</strong>
+            @if (comparison.suppliersCompared > 1 && comparison.savingsPerUnit > 0) {
+              <small>
+                Ahorro hasta Q {{ comparison.savingsPerUnit | number: '1.2-4' }}
+                por unidad ({{ comparison.savingsPercentage | number: '1.2-2' }}%)
+              </small>
+            }
+          </div>
+        </section>
+
+        <div class="table-scroll comparison-table">
+          <table class="store-table">
+            <thead>
+              <tr>
+                <th>Proveedor</th>
+                <th>Último costo</th>
+                <th>Promedio histórico</th>
+                <th>Rango histórico</th>
+                <th>Compras</th>
+                <th>Última compra</th>
+                <th>Diferencia</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              @for (supplier of comparison.suppliers; track supplier.supplierId) {
+                <tr [class.recommended-row]="supplier.recommended">
+                  <td>
+                    <div class="comparison-supplier">
+                      <strong>{{ supplier.supplierName }}</strong>
+                      <small>{{ supplier.supplierNit || 'Sin NIT' }}</small>
+                      @if (supplier.recommended) {
+                        <span class="best-price-pill">Mejor precio</span>
+                      }
+                    </div>
+                  </td>
+                  <td><strong>Q {{ supplier.latestUnitCost | number: '1.2-4' }}</strong></td>
+                  <td>Q {{ supplier.averageUnitCost | number: '1.2-4' }}</td>
+                  <td>
+                    Q {{ supplier.minimumUnitCost | number: '1.2-4' }}
+                    -
+                    Q {{ supplier.maximumUnitCost | number: '1.2-4' }}
+                  </td>
+                  <td>{{ supplier.purchaseCount }}</td>
+                  <td>{{ supplier.lastPurchaseDate | date: 'dd/MM/yyyy':'America/Guatemala' }}</td>
+                  <td>
+                    @if (supplier.differenceFromBest === 0) {
+                      <span class="best-price-text">Mejor opción</span>
+                    } @else {
+                      <span>
+                        + Q {{ supplier.differenceFromBest | number: '1.2-4' }}
+                        ({{ supplier.percentageAboveBest | number: '1.2-2' }}%)
+                      </span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="comparison-note">
+          <i class="pi pi-info-circle"></i>
+          La recomendación utiliza el costo unitario más reciente registrado para cada proveedor. El promedio y rango histórico se muestran como referencia adicional.
+        </div>
+      }
+    } @else {
+      <div class="comparison-state comparison-state--empty">
+        <i class="pi pi-search"></i>
+        <strong>Busca un producto</strong>
+        <span>La comparación se mostrará después de seleccionar un producto.</span>
+      </div>
+    }
+
+    <footer class="modal-actions comparison-actions">
+      <button
+        class="secondary-button secondary-button--compact"
+        type="button"
+        (click)="closeComparison()"
+      >
+        Cerrar
+      </button>
+    </footer>
+  </section>
+}
+
+
+@if (barcodeScannerOpen()) {
+  <app-barcode-scanner
+    (scanned)="onBarcodeScanned($event)"
+    (closed)="closeBarcodeScanner()"
+  />
+}

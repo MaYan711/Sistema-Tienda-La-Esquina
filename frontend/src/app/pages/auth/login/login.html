@@ -1,0 +1,48 @@
+<section class="auth-page">
+  <span class="auth-page__kicker">{{ 'auth.login.kicker' | transloco }}</span>
+  <h1>{{ 'auth.login.title' | transloco }}</h1>
+  <p class="auth-page__intro">{{ 'auth.login.description' | transloco }}</p>
+
+  <app-form-feedback [message]="serverMessage()" />
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="form-field">
+      <label for="login-email">{{ 'auth.fields.email' | transloco }}</label>
+      <input
+        id="login-email"
+        pInputText
+        type="email"
+        formControlName="email"
+        autocomplete="username"
+        [placeholder]="'auth.fields.emailPlaceholder' | transloco"
+      />
+      <app-field-error [control]="form.controls.email" [submitted]="submitted()" />
+    </div>
+
+    <div class="form-field">
+      <div class="form-field__label-row">
+        <label for="login-password">{{ 'auth.fields.password' | transloco }}</label>
+        <a routerLink="/auth/recovery">{{ 'auth.login.forgotPassword' | transloco }}</a>
+      </div>
+      <input
+        id="login-password"
+        pInputText
+        type="password"
+        formControlName="password"
+        autocomplete="current-password"
+        [placeholder]="'auth.fields.passwordPlaceholder' | transloco"
+      />
+      <app-field-error [control]="form.controls.password" [submitted]="submitted()" />
+    </div>
+
+    <button class="primary-button" type="submit" [disabled]="isSubmitting()">
+      @if (isSubmitting()) {
+        <i class="pi pi-spin pi-spinner"></i>
+      }
+      <span>{{ 'auth.login.submit' | transloco }}</span>
+      @if (!isSubmitting()) {
+        <i class="pi pi-arrow-up-right"></i>
+      }
+    </button>
+  </form>
+</section>

@@ -1,0 +1,151 @@
+.scanner-backdrop {
+  background: rgba(18, 55, 42, 0.68);
+  inset: 0;
+  position: fixed;
+  z-index: 80;
+}
+
+.scanner-modal {
+  background: var(--surface);
+  border-radius: 1rem;
+  box-shadow: 0 1.5rem 4rem rgba(18, 55, 42, 0.3);
+  left: 50%;
+  max-width: 34rem;
+  padding: 1.15rem;
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 1.5rem);
+  z-index: 85;
+}
+
+.scanner-modal header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+}
+
+.scanner-modal header span {
+  color: var(--accent-deep);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.scanner-modal h2 {
+  font-size: 1.25rem;
+  margin: 0.2rem 0 0;
+}
+
+.scanner-modal header button {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.2rem;
+  justify-content: center;
+  width: 2.2rem;
+}
+
+.scanner-view {
+  aspect-ratio: 4 / 3;
+  background: #10251d;
+  border-radius: 0.85rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.scanner-view video {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.scanner-frame {
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 0.65rem;
+  height: 36%;
+  left: 10%;
+  position: absolute;
+  top: 32%;
+  width: 80%;
+}
+
+.scanner-status {
+  align-items: center;
+  background: rgba(16, 37, 29, 0.72);
+  color: #fff;
+  display: flex;
+  gap: 0.55rem;
+  inset: 0;
+  justify-content: center;
+  position: absolute;
+}
+
+.scanner-help {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  margin: 0.8rem 0;
+}
+
+.scanner-error {
+  align-items: flex-start;
+  background: #fde7e5;
+  border-radius: 0.7rem;
+  color: #8c3734;
+  display: flex;
+  font-size: 0.74rem;
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+  padding: 0.75rem;
+}
+
+.manual-entry {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.manual-entry label {
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.manual-entry > div {
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: 1fr auto;
+}
+
+.manual-entry input {
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  min-width: 0;
+  padding: 0.7rem 0.75rem;
+}
+
+.manual-entry button {
+  background: var(--accent);
+  border: 0;
+  border-radius: 0.65rem;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0.7rem 0.9rem;
+}
+
+@media (max-width: 520px) {
+  .scanner-modal {
+    padding: 0.9rem;
+  }
+
+  .manual-entry > div {
+    grid-template-columns: 1fr;
+  }
+}
