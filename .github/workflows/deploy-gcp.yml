@@ -1,0 +1,119 @@
+name: Deploy GCP
+
+on:
+  push:
+    branches:
+      - feature/despliegue-gcp
+      - develop
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: tienda-la-esquina-gcp
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: tienda-la-esquina
+  REGION: us-central1
+  GAR_REPOSITORY: tienda-la-esquina
+  BACKEND_SERVICE: tienda-backend
+  FRONTEND_SERVICE: tienda-frontend
+  WORKLOAD_IDENTITY_PROVIDER: projects/664365722900/locations/global/workloadIdentityPools/github-actions/providers/github-tienda
+  DEPLOY_SERVICE_ACCOUNT: github-actions-deploy@tienda-la-esquina.iam.gserviceaccount.com
+
+jobs:
+  deploy:
+    name: Build and deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Define images
+        run: |
+          echo "BACKEND_IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${GAR_REPOSITORY}/backend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "FRONTEND_IMAGE=${REGION}-docker.pkg.dev/${PROJECT_ID}/${GAR_REPOSITORY}/frontend:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Build backend image
+        run: docker build -t "$BACKEND_IMAGE" backend
+
+      - name: Build frontend image
+        run: docker build -t "$FRONTEND_IMAGE" frontend
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Configure Google Cloud
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker authentication
+        run: gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+
+      - name: Push backend image
+        run: docker push "$BACKEND_IMAGE"
+
+      - name: Push frontend image
+        run: docker push "$FRONTEND_IMAGE"
+
+      - name: Deploy backend
+        id: backend
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: ${{ env.BACKEND_SERVICE }}
+          region: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+          image: ${{ env.BACKEND_IMAGE }}
+
+      - name: Deploy frontend
+        id: frontend
+        uses: google-github-actions/deploy-cloudrun@v3
+        with:
+          service: ${{ env.FRONTEND_SERVICE }}
+          region: ${{ env.REGION }}
+          project_id: ${{ env.PROJECT_ID }}
+          image: ${{ env.FRONTEND_IMAGE }}
+
+      - name: Smoke test backend
+        run: |
+          STATUS=$(curl -sS -o /tmp/backend-response.txt -w "%{http_code}" \
+            "${{ steps.backend.outputs.url }}/api/v1/products")
+
+          echo "Backend HTTP status: $STATUS"
+
+          if [ "$STATUS" != "401" ]; then
+            cat /tmp/backend-response.txt
+            exit 1
+          fi
+
+      - name: Smoke test frontend
+        run: |
+          curl --fail --silent --show-error \
+            --head \
+            "${{ steps.frontend.outputs.url }}"
+
+      - name: Smoke test frontend proxy
+        run: |
+          STATUS=$(curl -sS -o /tmp/frontend-api-response.txt -w "%{http_code}" \
+            "${{ steps.frontend.outputs.url }}/api/v1/products")
+
+          echo "Frontend proxy HTTP status: $STATUS"
+
+          if [ "$STATUS" != "401" ]; then
+            cat /tmp/frontend-api-response.txt
+            exit 1
+          fi
+
+      - name: Deployment URLs
+        run: |
+          echo "Backend:  ${{ steps.backend.outputs.url }}"
+          echo "Frontend: ${{ steps.frontend.outputs.url }}"
