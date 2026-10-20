@@ -1,17 +1,30 @@
 <div class="scanner-backdrop" (click)="close()"></div>
-<section class="scanner-modal" role="dialog" aria-modal="true" aria-label="Escáner de código de barras">
+
+<section
+  class="scanner-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Escáner de código de barras"
+>
   <header>
     <div>
       <span>Cámara del dispositivo</span>
       <h2>Escanear código de barras</h2>
     </div>
+
     <button type="button" title="Cerrar" (click)="close()">
       <i class="pi pi-times"></i>
     </button>
   </header>
 
   <div class="scanner-view">
-    <video #video autoplay playsinline muted></video>
+    <video
+      #video
+      autoplay
+      playsinline
+      muted
+    ></video>
+
     <div class="scanner-frame"></div>
 
     @if (loading()) {
@@ -23,7 +36,8 @@
   </div>
 
   <p class="scanner-help">
-    Coloca el código dentro del recuadro. La cámara trasera se seleccionará automáticamente cuando esté disponible.
+    Coloca el código dentro del recuadro y mantén el teléfono estable.
+    Se utilizará preferentemente la cámara trasera del dispositivo.
   </p>
 
   @if (errorMessage()) {
@@ -35,9 +49,24 @@
 
   <div class="manual-entry">
     <label for="manual-barcode">Código manual</label>
+
     <div>
-      <input #manualCode id="manual-barcode" type="text" inputmode="numeric" placeholder="Escribe o pega el código" />
-      <button type="button" (click)="useManualCode(manualCode.value)">Usar código</button>
+      <input
+        #manualCode
+        id="manual-barcode"
+        type="text"
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        placeholder="Escribe o pega el código"
+      />
+
+      <button
+        type="button"
+        (click)="useManualCode(manualCode.value)"
+      >
+        Usar código
+      </button>
     </div>
   </div>
 </section>
