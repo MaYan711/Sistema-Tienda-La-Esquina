@@ -8,19 +8,12 @@ import {
   ViewChild,
   signal,
 } from '@angular/core';
-
-interface BarcodeResultLike {
-  rawValue: string;
-}
-
-interface BarcodeDetectorLike {
-  detect(source: HTMLVideoElement): Promise<BarcodeResultLike[]>;
-}
-
-interface BarcodeDetectorConstructor {
-  new (options?: { formats?: string[] }): BarcodeDetectorLike;
-  getSupportedFormats?(): Promise<string[]>;
-}
+import {
+  BarcodeFormat,
+  BrowserCodeReader,
+  BrowserMultiFormatReader,
+  IScannerControls,
+} from '@zxing/browser';
 
 @Component({
   selector: 'app-barcode-scanner',
@@ -37,10 +30,12 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
 
-  private stream: MediaStream | null = null;
-  private detector: BarcodeDetectorLike | null = null;
-  private animationFrame: number | null = null;
-  private scanning = false;
+  private readonly codeReader = new BrowserMultiFormatReader(undefined, {
+    delayBetweenScanAttempts: 150,
+    delayBetweenScanSuccess: 500,
+  });
+
+  private controls: IScannerControls | null = null;
   private finished = false;
 
   ngAfterViewInit(): void {
@@ -58,108 +53,76 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
 
   useManualCode(value: string): void {
     const code = value.trim();
+
     if (!code) {
       this.errorMessage.set('Ingresa un código de barras válido.');
       return;
     }
+
     this.finish(code);
   }
 
   private async start(): Promise<void> {
     try {
+      if (!window.isSecureContext) {
+        throw new Error('La cámara requiere una conexión HTTPS segura.');
+      }
+
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('La cámara no está disponible en este navegador.');
       }
 
-      const detectorConstructor = (
-        window as typeof window & { BarcodeDetector?: BarcodeDetectorConstructor }
-      ).BarcodeDetector;
-
-      if (!detectorConstructor) {
-        throw new Error(
-          'Este navegador no soporta lectura nativa de códigos de barras. Abre el sistema en Chrome desde el teléfono o ingresa el código manualmente.',
-        );
-      }
-
-      const preferredFormats = [
-        'ean_13',
-        'ean_8',
-        'upc_a',
-        'upc_e',
-        'code_128',
-        'code_39',
-        'itf',
-        'codabar',
+      this.codeReader.possibleFormats = [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.EAN_8,
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+        BarcodeFormat.CODE_128,
+        BarcodeFormat.CODE_39,
+        BarcodeFormat.ITF,
+        BarcodeFormat.CODABAR,
       ];
 
-      const supported = detectorConstructor.getSupportedFormats
-        ? await detectorConstructor.getSupportedFormats()
-        : [];
-      const formats = preferredFormats.filter((format) => supported.includes(format));
-
-      this.detector = formats.length > 0
-        ? new detectorConstructor({ formats })
-        : new detectorConstructor();
-
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-      });
-
       const video = this.videoRef.nativeElement;
-      video.srcObject = this.stream;
-      await video.play();
+
+      this.controls = await this.codeReader.decodeFromConstraints(
+        {
+          audio: false,
+          video: {
+            facingMode: {
+              ideal: 'environment',
+            },
+            width: {
+              ideal: 1280,
+            },
+            height: {
+              ideal: 720,
+            },
+          },
+        },
+        video,
+        (result, _error, controls) => {
+          if (this.finished || !result) {
+            return;
+          }
+
+          const code = result.getText().trim();
+
+          if (!code) {
+            return;
+          }
+
+          this.controls = controls;
+          this.finish(code);
+        },
+      );
+
       this.loading.set(false);
-      this.scanFrame();
+      this.errorMessage.set(null);
     } catch (error) {
       this.loading.set(false);
-      this.errorMessage.set(
-        error instanceof Error
-          ? error.message
-          : 'No fue posible iniciar la cámara.',
-      );
+      this.errorMessage.set(this.getCameraErrorMessage(error));
     }
-  }
-
-  private scanFrame(): void {
-    if (this.finished) {
-      return;
-    }
-
-    this.animationFrame = requestAnimationFrame(() => {
-      void this.detectFrame();
-    });
-  }
-
-  private async detectFrame(): Promise<void> {
-    const video = this.videoRef.nativeElement;
-
-    if (!this.detector || this.scanning || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
-      this.scanFrame();
-      return;
-    }
-
-    this.scanning = true;
-
-    try {
-      const results = await this.detector.detect(video);
-      const value = results.find((result) => result.rawValue?.trim())?.rawValue.trim();
-
-      if (value) {
-        this.finish(value);
-        return;
-      }
-    } catch {
-      this.errorMessage.set('No se pudo leer el código. Mantén el código centrado y con buena iluminación.');
-    } finally {
-      this.scanning = false;
-    }
-
-    this.scanFrame();
   }
 
   private finish(code: string): void {
@@ -173,16 +136,39 @@ export class BarcodeScannerComponent implements AfterViewInit, OnDestroy {
   }
 
   private stop(): void {
-    if (this.animationFrame != null) {
-      cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = null;
+    this.controls?.stop();
+    this.controls = null;
+
+    BrowserCodeReader.releaseAllStreams();
+
+    const video = this.videoRef?.nativeElement;
+
+    if (video) {
+      video.pause();
+      video.srcObject = null;
+    }
+  }
+
+  private getCameraErrorMessage(error: unknown): string {
+    if (error instanceof DOMException) {
+      switch (error.name) {
+        case 'NotAllowedError':
+          return 'No se concedió permiso para usar la cámara. Habilita el acceso a la cámara desde la configuración del navegador.';
+        case 'NotFoundError':
+          return 'No se encontró una cámara disponible en este dispositivo.';
+        case 'NotReadableError':
+          return 'No se pudo utilizar la cámara. Verifica que otra aplicación no la esté usando.';
+        case 'OverconstrainedError':
+          return 'La cámara del dispositivo no admite la configuración solicitada.';
+        case 'SecurityError':
+          return 'El navegador bloqueó el acceso a la cámara por seguridad.';
+      }
     }
 
-    this.stream?.getTracks().forEach((track) => track.stop());
-    this.stream = null;
-
-    if (this.videoRef?.nativeElement) {
-      this.videoRef.nativeElement.srcObject = null;
+    if (error instanceof Error) {
+      return error.message;
     }
+
+    return 'No fue posible iniciar el lector de código de barras.';
   }
 }
