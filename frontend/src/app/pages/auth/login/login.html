@@ -24,14 +24,28 @@
         <label for="login-password">{{ 'auth.fields.password' | transloco }}</label>
         <a routerLink="/auth/recovery">{{ 'auth.login.forgotPassword' | transloco }}</a>
       </div>
-      <input
-        id="login-password"
-        pInputText
-        type="password"
-        formControlName="password"
-        autocomplete="current-password"
-        [placeholder]="'auth.fields.passwordPlaceholder' | transloco"
-      />
+
+      <div class="password-input">
+        <input
+          id="login-password"
+          pInputText
+          [type]="passwordVisible() ? 'text' : 'password'"
+          formControlName="password"
+          autocomplete="current-password"
+          [placeholder]="'auth.fields.passwordPlaceholder' | transloco"
+        />
+        <button
+          class="password-input__toggle"
+          type="button"
+          [attr.aria-label]="passwordVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          [attr.aria-pressed]="passwordVisible()"
+          [title]="passwordVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+          (click)="togglePasswordVisibility()"
+        >
+          <i class="pi" [class.pi-eye]="!passwordVisible()" [class.pi-eye-slash]="passwordVisible()"></i>
+        </button>
+      </div>
+
       <app-field-error [control]="form.controls.password" [submitted]="submitted()" />
     </div>
 
