@@ -38,3 +38,44 @@
 .auth-page__footnote i {
   color: var(--accent-deep);
 }
+
+.password-input {
+  position: relative;
+  width: 100%;
+}
+
+.password-input input {
+  padding-right: 3rem !important;
+}
+
+.password-input__toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+  width: 2.25rem;
+}
+
+.password-input__toggle:hover {
+  background: rgba(15, 70, 52, 0.08);
+  color: var(--accent-deep);
+}
+
+.password-input__toggle:focus-visible {
+  box-shadow: 0 0 0 3px rgba(109, 139, 23, 0.18);
+  color: var(--accent-deep);
+  outline: none;
+}
